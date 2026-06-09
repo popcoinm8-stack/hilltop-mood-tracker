@@ -1,0 +1,11 @@
+*.db
+*.sqlite3
+.env
+*.wav
+*.mp3
+__pycache__/
+.venv/
+venv/
+models/
+*.gguf
+*.onnx

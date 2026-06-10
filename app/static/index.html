@@ -1572,56 +1572,213 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
   line-height: 1.5;
 }
 
-/* ===== PIN LOCK ===== */
-#pin-lock {
+/* ===== VAULT LOCK (Phase S2 — encryption at rest) ===== */
+#vault-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
   background: var(--bg-primary);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
+  padding: 1rem;
 }
-#pin-lock.hidden { display: none; }
-.pin-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); }
-.pin-dots {
-  display: flex;
-  gap: 0.6rem;
-}
-.pin-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 2px solid var(--border-accent);
-  background: transparent;
-  transition: background var(--transition-fast);
-}
-.pin-dot.filled { background: var(--accent); border-color: var(--accent); }
-.pin-error { font-size: 0.82rem; color: #f87171; min-height: 1.2em; }
-.pin-keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-.pin-key {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
+#vault-overlay.hidden { display: none; }
+
+.vault-card {
   background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem 2.5rem;
+  max-width: 420px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.vault-icon {
+  text-align: center;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.vault-title {
+  font-size: 1.15rem;
+  font-weight: 700;
   color: var(--text-primary);
-  font-size: 1.2rem;
+  text-align: center;
+  margin: 0;
+}
+
+.vault-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin: -0.75rem 0 0;
+  line-height: 1.5;
+}
+
+.vault-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.vault-label {
+  font-size: 0.78rem;
   font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.vault-input-wrap {
+  position: relative;
+}
+
+.vault-input {
+  width: 100%;
+  padding: 0.6rem 2.4rem 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-inset);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+.vault-input:focus { border-color: var(--accent); }
+.vault-input.error { border-color: #f87171; }
+
+.vault-input-eye {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  color: var(--text-muted);
+  padding: 0.2rem;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.vault-strength {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-height: 1em;
+}
+.vault-strength.weak { color: #f87171; }
+.vault-strength.ok { color: #fbbf24; }
+.vault-strength.good { color: #5bca8e; }
+
+.vault-error {
+  font-size: 0.82rem;
+  color: #f87171;
+  min-height: 1.2em;
+  text-align: center;
+}
+
+.vault-btn {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+.vault-btn:hover { opacity: 0.85; }
+.vault-btn:active { opacity: 0.7; }
+.vault-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.vault-btn.secondary {
+  background: var(--bg-inset);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.vault-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+  padding: 0;
+}
+.vault-link:hover { opacity: 0.8; }
+
+.vault-recovery-section {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vault-recovery-toggle {
+  text-align: center;
+}
+
+.vault-recovery-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vault-recovery-key-display {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  word-break: break-all;
+  font-family: monospace;
+  user-select: all;
+}
+
+.vault-warning {
+  background: rgba(248,113,113,0.08);
+  border: 1px solid rgba(248,113,113,0.25);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  font-size: 0.78rem;
+  color: #f87171;
+  line-height: 1.5;
+}
+
+.vault-warning strong { display: block; margin-bottom: 0.2rem; }
+
+.vault-copy-btn {
+  font-size: 0.78rem;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
   font-family: inherit;
 }
-.pin-key:hover { background: var(--bg-inset); }
-.pin-key:active { transform: scale(0.95); }
-.pin-key.wide { font-size: 0.75rem; letter-spacing: 0; }
+
+.vault-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.vault-checkbox-row input[type="checkbox"] { margin-top: 0.1rem; flex-shrink: 0; }
 
 /* ===== PRINT — clean clinician handout ===== */
 @media print {
@@ -1635,7 +1792,7 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
     padding: 0 !important;
   }
   .tab-bar,
-  .pin-overlay,
+  #vault-overlay,
   #recording-ui,
   #transcribing-ui,
   #mic-btn,
@@ -1708,17 +1865,11 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
   <span id="theme-label">Dark</span>
 </button>
 
-<!-- PIN lock overlay -->
-<div id="pin-lock" class="hidden">
-  <div class="pin-title">Enter your PIN</div>
-  <div class="pin-dots" id="pin-dots">
-    <div class="pin-dot"></div>
-    <div class="pin-dot"></div>
-    <div class="pin-dot"></div>
-    <div class="pin-dot"></div>
+<!-- Vault lock overlay (Phase S2 — replaces cosmetic PIN lock) -->
+<div id="vault-overlay" class="hidden">
+  <div class="vault-card" id="vault-card">
+    <!-- Content injected by initVaultUI() -->
   </div>
-  <div class="pin-error" id="pin-error"></div>
-  <div class="pin-keypad" id="pin-keypad"></div>
 </div>
 
 <!-- Provider privacy badge -->
@@ -4728,86 +4879,333 @@ async function saveWorkingNotes(entryId) {
 }
 
 // ============================================================
-// PIN LOCK
+// VAULT UI (Phase S2 — replaces cosmetic PIN lock)
 // ============================================================
-const PIN_KEY = 'moodTrackerPin';
-const PIN_LENGTH = 4;
-let pinEntered = '';
-let pinKeypad = null;
 
-function buildPinKeypad() {
-  const container = document.getElementById('pin-keypad');
-  container.innerHTML = '';
-  const keys = ['1','2','3','4','5','6','7','8','9','','0','del'];
-  keys.forEach(k => {
-    const btn = document.createElement('button');
-    btn.className = 'pin-key' + (k === '' ? ' wide' : '');
-    btn.textContent = k === 'del' ? 'Del' : k;
-    btn.onclick = () => handlePinKey(k);
-    container.appendChild(btn);
-  });
-}
+// Vault state (fetched from /vault-status on load)
+let vaultState = { is_setup: false, is_unlocked: false, has_recovery_key: false };
+let vaultMode = '';           // 'unlock' | 'setup' | 'recovery'
+let vaultInputType = 'password';
+let vaultUnlocking = false;
 
-function handlePinKey(k) {
-  if (k === 'del') {
-    pinEntered = pinEntered.slice(0, -1);
-  } else if (pinEntered.length < PIN_LENGTH) {
-    pinEntered += k;
-  }
-  updatePinDots();
-  if (pinEntered.length === PIN_LENGTH) {
-    checkPin();
+async function fetchVaultStatus() {
+  try {
+    const res = await fetch('/vault-status');
+    if (res.ok) {
+      vaultState = await res.json();
+    }
+  } catch (_) {
+    vaultState = { is_setup: false, is_unlocked: false, has_recovery_key: false };
   }
 }
 
-function updatePinDots() {
-  document.querySelectorAll('.pin-dot').forEach((dot, i) => {
-    dot.classList.toggle('filled', i < pinEntered.length);
-  });
+function setVaultInputType(type) {
+  vaultInputType = type;
+  const input = document.getElementById('vault-passphrase');
+  if (input) input.type = type;
+  const eyeBtn = document.getElementById('vault-eye-btn');
+  if (eyeBtn) eyeBtn.textContent = type === 'password' ? 'Show' : 'Hide';
 }
 
-function checkPin() {
-  const stored = localStorage.getItem(PIN_KEY);
-  const errorEl = document.getElementById('pin-error');
-  if (!stored) {
-    // First time: set PIN
-    localStorage.setItem(PIN_KEY, pinEntered);
-    unlockApp();
+async function initVaultUI() {
+  await fetchVaultStatus();
+  vaultMode = vaultState.is_setup ? 'unlock' : 'setup';
+  renderVaultCard();
+  document.getElementById('vault-overlay').classList.remove('hidden');
+}
+
+function renderVaultCard() {
+  const card = document.getElementById('vault-card');
+  if (vaultMode === 'setup') {
+    renderVaultSetup(card);
+  } else if (vaultMode === 'recovery') {
+    renderVaultRecovery(card);
+  } else {
+    renderVaultUnlock(card);
+  }
+}
+
+function renderVaultUnlock(card) {
+  const hasRK = vaultState.has_recovery_key;
+  card.innerHTML = `
+    <div class="vault-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+    <h2 class="vault-title">Unlock your journal</h2>
+    <p class="vault-subtitle">Enter your passphrase to decrypt your data.</p>
+    <div class="vault-field">
+      <label class="vault-label" for="vault-passphrase">Passphrase</label>
+      <div class="vault-input-wrap">
+        <input class="vault-input" type="password" id="vault-passphrase" placeholder="Your passphrase" autocomplete="current-password" onkeydown="if(event.key==='Enter')doVaultUnlock()" />
+        <button class="vault-input-eye" id="vault-eye-btn" onclick="setVaultInputType(vaultInputType==='password'?'text':'password')" type="button">Show</button>
+      </div>
+    </div>
+    <div class="vault-error" id="vault-error"></div>
+    <button class="vault-btn" id="vault-unlock-btn" onclick="doVaultUnlock()">Unlock</button>
+    ${hasRK ? '<div class="vault-recovery-section"><div class="vault-recovery-toggle"><button class="vault-link" onclick="vaultMode=\'recovery\';renderVaultCard()">Forgot passphrase? Use recovery key.</button></div></div>' : ''}
+  `;
+  document.getElementById('vault-passphrase').focus();
+}
+
+function renderVaultSetup(card) {
+  card.innerHTML = `
+    <div class="vault-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <h2 class="vault-title">Set up encryption</h2>
+    <p class="vault-subtitle">Choose a strong passphrase. It encrypts your journal — lose it and your data is gone.</p>
+    <div class="vault-warning">
+      <strong>Important: no recovery if you forget.</strong>
+      There is no password reset. If you forget your passphrase and lose your recovery key, your data cannot be recovered.
+    </div>
+    <div class="vault-field">
+      <label class="vault-label" for="vault-passphrase">Passphrase</label>
+      <div class="vault-input-wrap">
+        <input class="vault-input" type="password" id="vault-passphrase" placeholder="At least 8 characters" autocomplete="new-password" oninput="onVaultPassphraseInput(this.value)" onkeydown="if(event.key==='Enter')doVaultSetup()" />
+        <button class="vault-input-eye" id="vault-eye-btn" onclick="setVaultInputType(vaultInputType==='password'?'text':'password')" type="button">Show</button>
+      </div>
+      <span class="vault-strength" id="vault-strength"></span>
+    </div>
+    <div class="vault-field">
+      <label class="vault-label" for="vault-passphrase2">Confirm passphrase</label>
+      <input class="vault-input" type="password" id="vault-passphrase2" placeholder="Repeat passphrase" autocomplete="new-password" onkeydown="if(event.key==='Enter')doVaultSetup()" />
+    </div>
+    <div class="vault-error" id="vault-error"></div>
+    <button class="vault-btn" id="vault-setup-btn" onclick="doVaultSetup()">Enable encryption</button>
+  `;
+  document.getElementById('vault-passphrase').focus();
+}
+
+function renderVaultRecovery(card) {
+  card.innerHTML = `
+    <div class="vault-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <h2 class="vault-title">Recover with recovery key</h2>
+    <p class="vault-subtitle">Use your recovery key to set a new passphrase. Your journal entries stay encrypted with the old key — the model will be unavailable until you enter your old passphrase via Settings.</p>
+    <div class="vault-field">
+      <label class="vault-label" for="vault-recovery-key">Recovery key</label>
+      <input class="vault-input" type="text" id="vault-recovery-key" placeholder="Your 24-character recovery key" autocomplete="off" onkeydown="if(event.key==='Enter')doVaultRecovery()" />
+    </div>
+    <div class="vault-field">
+      <label class="vault-label" for="vault-new-passphrase">New passphrase</label>
+      <div class="vault-input-wrap">
+        <input class="vault-input" type="password" id="vault-new-passphrase" placeholder="At least 8 characters" autocomplete="new-password" oninput="onVaultPassphraseInput(this.value)" onkeydown="if(event.key==='Enter')doVaultRecovery()" />
+        <button class="vault-input-eye" id="vault-eye-btn" onclick="setVaultInputType(vaultInputType==='password'?'text':'password')" type="button">Show</button>
+      </div>
+      <span class="vault-strength" id="vault-strength"></span>
+    </div>
+    <div class="vault-field">
+      <label class="vault-label" for="vault-new-passphrase2">Confirm new passphrase</label>
+      <input class="vault-input" type="password" id="vault-new-passphrase2" placeholder="Repeat new passphrase" autocomplete="new-password" onkeydown="if(event.key==='Enter')doVaultRecovery()" />
+    </div>
+    <div class="vault-error" id="vault-error"></div>
+    <button class="vault-btn" id="vault-recovery-btn" onclick="doVaultRecovery()">Set new passphrase</button>
+    <div style="text-align:center;"><button class="vault-link" onclick="vaultMode='unlock';renderVaultCard()">Back to unlock</button></div>
+  `;
+  document.getElementById('vault-recovery-key').focus();
+}
+
+function onVaultPassphraseInput(value) {
+  const strengthEl = document.getElementById('vault-strength');
+  if (!strengthEl) return;
+  const len = value.length;
+  const hasUpper = /[A-Z]/.test(value);
+  const hasDigit = /[0-9]/.test(value);
+  const hasSpecial = /[^A-Za-z0-9]/.test(value);
+  const score = hasUpper + hasDigit + hasSpecial;
+  if (len < 8) {
+    strengthEl.textContent = 'Too short — use at least 8 characters.';
+    strengthEl.className = 'vault-strength weak';
+  } else if (len < 12) {
+    strengthEl.textContent = 'Acceptable, but longer is better.';
+    strengthEl.className = 'vault-strength ok';
+  } else if (len < 16) {
+    strengthEl.textContent = 'Good.';
+    strengthEl.className = 'vault-strength good';
+  } else if (score >= 2) {
+    strengthEl.textContent = 'Strong.';
+    strengthEl.className = 'vault-strength good';
+  } else if (len >= 16) {
+    strengthEl.textContent = 'Good — consider adding numbers or symbols.';
+    strengthEl.className = 'vault-strength ok';
+  } else {
+    strengthEl.textContent = 'Good.';
+    strengthEl.className = 'vault-strength ok';
+  }
+}
+
+function setVaultError(msg) {
+  const el = document.getElementById('vault-error');
+  if (el) el.textContent = msg || '';
+  if (msg) {
+    const inp = document.getElementById('vault-passphrase') || document.getElementById('vault-new-passphrase');
+    if (inp) inp.classList.add('error');
+  }
+}
+
+function clearVaultError() {
+  setVaultError('');
+  document.querySelectorAll('.vault-input').forEach(i => i.classList.remove('error'));
+}
+
+async function doVaultUnlock() {
+  if (vaultUnlocking) return;
+  const passphrase = document.getElementById('vault-passphrase').value;
+  if (!passphrase) { setVaultError('Please enter your passphrase.'); return; }
+  clearVaultError();
+  vaultUnlocking = true;
+  const btn = document.getElementById('vault-unlock-btn');
+  btn.disabled = true;
+  btn.textContent = 'Unlocking…';
+  try {
+    const res = await fetch('/vault-unlock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passphrase }),
+    });
+    if (res.ok) {
+      document.getElementById('vault-overlay').classList.add('hidden');
+      // Page content is already shown; vault middleware will have unblocked it
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setVaultError(data.detail || 'Incorrect passphrase. Try again.');
+    }
+  } catch (e) {
+    setVaultError('Could not connect to server. Is the app running?');
+  } finally {
+    vaultUnlocking = false;
+    btn.disabled = false;
+    btn.textContent = 'Unlock';
+  }
+}
+
+async function doVaultSetup() {
+  if (vaultUnlocking) return;
+  const passphrase = document.getElementById('vault-passphrase').value;
+  const passphrase2 = document.getElementById('vault-passphrase2').value;
+  if (!passphrase || passphrase.length < 8) { setVaultError('Passphrase must be at least 8 characters.'); return; }
+  if (passphrase !== passphrase2) { setVaultError('Passphrases do not match.'); return; }
+  clearVaultError();
+
+  // Generate recovery key
+  const recoveryKey = generateRecoveryKey();
+  vaultUnlocking = true;
+  const btn = document.getElementById('vault-setup-btn');
+  btn.disabled = true;
+  btn.textContent = 'Setting up…';
+  try {
+    const res = await fetch('/vault-setup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passphrase, recovery_key: recoveryKey }),
+    });
+    if (res.ok) {
+      // Show recovery key before hiding the overlay
+      showRecoveryKeyDisplay(recoveryKey);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setVaultError(data.detail || 'Setup failed. ' + (data.detail || ''));
+    }
+  } catch (e) {
+    setVaultError('Could not connect to server. Is the app running?');
+  } finally {
+    vaultUnlocking = false;
+    btn.disabled = false;
+    btn.textContent = 'Enable encryption';
+  }
+}
+
+function showRecoveryKeyDisplay(recoveryKey) {
+  const card = document.getElementById('vault-card');
+  card.innerHTML = `
+    <div class="vault-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+      </svg>
+    </div>
+    <h2 class="vault-title">Save your recovery key</h2>
+    <p class="vault-subtitle">Write this down and store it somewhere safe. It is the only way to recover your data if you forget your passphrase.</p>
+    <div class="vault-recovery-key-display" id="recovery-key-display">${escHtml(recoveryKey)}</div>
+    <button class="vault-copy-btn" onclick="copyRecoveryKey()">Copy to clipboard</button>
+    <div class="vault-warning">
+      <strong>No recovery key = no data recovery.</strong>
+      If you forget your passphrase and lose this key, your encrypted journal data is permanently inaccessible.
+    </div>
+    <div class="vault-checkbox-row">
+      <input type="checkbox" id="vault-understood" />
+      <label for="vault-understood">I understand that losing both my passphrase and recovery key means permanent data loss.</label>
+    </div>
+    <button class="vault-btn" id="vault-continue-btn" onclick="completeVaultSetup()">I have saved my recovery key</button>
+  `;
+}
+
+async function completeVaultSetup() {
+  const understood = document.getElementById('vault-understood');
+  if (!understood.checked) {
+    alert('Please confirm you have saved your recovery key.');
     return;
   }
-  if (pinEntered === stored) {
-    unlockApp();
-  } else {
-    errorEl.textContent = 'Incorrect PIN. Try again.';
-    pinEntered = '';
-    updatePinDots();
+  document.getElementById('vault-overlay').classList.add('hidden');
+}
+
+async function doVaultRecovery() {
+  if (vaultUnlocking) return;
+  const recoveryKey = document.getElementById('vault-recovery-key').value.trim();
+  const newPassphrase = document.getElementById('vault-new-passphrase').value;
+  const newPassphrase2 = document.getElementById('vault-new-passphrase2').value;
+  if (!recoveryKey || recoveryKey.length < 8) { setVaultError('Please enter your recovery key.'); return; }
+  if (!newPassphrase || newPassphrase.length < 8) { setVaultError('New passphrase must be at least 8 characters.'); return; }
+  if (newPassphrase !== newPassphrase2) { setVaultError('Passphrases do not match.'); return; }
+  clearVaultError();
+  vaultUnlocking = true;
+  const btn = document.getElementById('vault-recovery-btn');
+  btn.disabled = true;
+  btn.textContent = 'Recovering…';
+  try {
+    const res = await fetch('/vault-recovery-unlock', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recovery_key: recoveryKey, new_passphrase: newPassphrase }),
+    });
+    if (res.ok) {
+      document.getElementById('vault-overlay').classList.add('hidden');
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setVaultError(data.detail || 'Recovery failed. Check your recovery key.');
+    }
+  } catch (e) {
+    setVaultError('Could not connect to server. Is the app running?');
+  } finally {
+    vaultUnlocking = false;
+    btn.disabled = false;
+    btn.textContent = 'Set new passphrase';
   }
 }
 
-function unlockApp() {
-  document.getElementById('pin-lock').classList.add('hidden');
-  pinEntered = '';
-  updatePinDots();
-  document.getElementById('pin-error').textContent = '';
+function generateRecoveryKey() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let key = '';
+  const arr = new Uint8Array(24);
+  crypto.getRandomValues(arr);
+  for (let i = 0; i < 24; i++) key += chars[arr[i] % chars.length];
+  return key;
 }
 
-function lockApp() {
-  document.getElementById('pin-lock').classList.remove('hidden');
-  pinEntered = '';
-  updatePinDots();
-  document.getElementById('pin-error').textContent = '';
-}
-
-function initPinLock() {
-  buildPinKeypad();
-  const stored = localStorage.getItem(PIN_KEY);
-  if (stored) {
-    lockApp();
-  } else {
-    // First time: show setup prompt
-    document.getElementById('pin-error').textContent = 'Set a 4-digit PIN to protect your data.';
-    document.getElementById('pin-lock').classList.remove('hidden');
-  }
+function copyRecoveryKey() {
+  const display = document.getElementById('recovery-key-display');
+  if (display) navigator.clipboard.writeText(display.textContent).catch(() => {});
 }
 
 // ============================================================
@@ -5054,7 +5452,7 @@ async function testSettingsConnection() {
 // ============================================================
 // INIT
 // ============================================================
-initPinLock();
+initVaultUI();
 
 // ============================================================
 // BACKUP & RESTORE (Phase S1)

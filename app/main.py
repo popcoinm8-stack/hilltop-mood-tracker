@@ -93,18 +93,14 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 @app.middleware("http")
 async def vault_lock_middleware(request, call_next):
     from app import vault as _v
-    # Allow vault endpoints and static files without lock
-    if request.url.path.startswith("/vault") or request.url.path.startswith("/static"):
+    # Allow: vault endpoints (unlock/setup), static files, root page (index.html serves the lock screen)
+    if request.url.path.startswith("/vault") or request.url.path.startswith("/static") or request.url.path == "/":
         return await call_next(request)
-    try:
-        return await call_next(request)
-    except Exception as exc:
-        # VaultLockedError raised when vault is locked and DB access is attempted
-        if exc.__class__.__name__ == "VaultLockedError":
-            from fastapi.responses import JSONResponse
-            return JSONResponse(status_code=401, content={"detail": "Vault is locked. Please unlock it first."})
-        # Re-raise other exceptions
-        raise
+    # Block API calls if the vault is set up but locked (not unlocked in memory)
+    if _v.is_vault_setup() and not _v._vault.is_unlocked():
+        from fastapi.responses import JSONResponse
+        return JSONResponse(status_code=401, content={"detail": "Vault is locked. Please unlock it first."})
+    return await call_next(request)
 
 # ---------------------------------------------------------------------------
 # DB init on startup
@@ -718,25 +714,18 @@ async def vault_setup(req: VaultSetupRequest) -> dict:
     cfg = llm.get_config()
     api_key_plaintext = cfg.get("api_key", "")
     encrypted_api_key = ""
-    if api_key_plaintext:
-        # Generate a temporary salt for encryption (setup_vault will generate its own)
-        import secrets as _secrets
-        temp_salt = _secrets.token_bytes(16)
-        encrypted_api_key = crypto.encrypt_value(req.passphrase, api_key_plaintext, temp_salt)
-        # Store the temp salt alongside so we can decrypt later
-        # Actually: we need to store with the same salt that setup_vault creates
-        # Let's just call setup_vault first (which creates the salt), then encrypt
-        encrypted_api_key = ""
 
     # Step 1: backup plaintext DB first (before creating vault.json)
     plaintext_backup = DB_PATH.with_name("mood.db.plaintext.backup")
     shutil.copy2(str(DB_PATH), str(plaintext_backup))
 
     # Step 2: create vault.json (generates salt)
+    # Store hash of recovery key (verifiable without passphrase)
+    recovery_key_hash = crypto.hash_recovery_key(req.recovery_key)
     _v.setup_vault(
         passphrase=req.passphrase,
         encrypted_api_key="",  # will update after we have the salt
-        encrypted_recovery_key=req.recovery_key,  # stored as plain text
+        encrypted_recovery_key=recovery_key_hash,
     )
 
     # Step 3: now encrypt API key with the vault's salt
@@ -794,11 +783,13 @@ async def vault_unlock(request: Request) -> dict:
         _v.unlock_vault(passphrase)
         install_vault_connection_factory(lambda: _v._vault.conn)
 
-        # Decrypt API key if stored
+        # Decrypt API key and inject into active LLM config so model calls work
         vault_data = _v.load_vault_data()
         if vault_data and vault_data.get("encrypted_api_key"):
             try:
-                _v._vault.decrypt_api_key(vault_data["encrypted_api_key"])
+                decrypted_key = _v._vault.decrypt_api_key(vault_data["encrypted_api_key"])
+                if decrypted_key:
+                    llm.set_provider_config({"api_key": decrypted_key})
             except Exception:
                 pass
 
@@ -828,7 +819,6 @@ async def vault_recovery_unlock(request: Request) -> dict:
     """
     from app import vault as _v
     import app.crypto as crypto
-    import secrets
     from app.database import DB_PATH
 
     body = await request.json()
@@ -843,13 +833,19 @@ async def vault_recovery_unlock(request: Request) -> dict:
     if not vault_data:
         raise HTTPException(status_code=400, detail="Vault not set up.")
 
-    stored_recovery_key = vault_data.get("encrypted_recovery_key", "")
-    if not stored_recovery_key:
+    stored_recovery_value = vault_data.get("encrypted_recovery_key", "")
+    if not stored_recovery_value:
         raise HTTPException(status_code=400, detail="No recovery key stored.")
 
-    # Verify typed key matches stored key
-    if not secrets.compare_digest(stored_recovery_key, typed_recovery_key):
-        raise HTTPException(status_code=401, detail="Incorrect recovery key.")
+    # Verify: new vaults store a hash (hex, 64 chars); old vaults store plaintext.
+    # Try hash verification first; fall back to direct comparison for legacy vaults.
+    if len(stored_recovery_value) == 64 and all(c in "0123456789abcdefABCDEF" for c in stored_recovery_value):
+        if not crypto.verify_recovery_key(typed_recovery_key, stored_recovery_value):
+            raise HTTPException(status_code=401, detail="Incorrect recovery key.")
+    else:
+        import secrets as _secrets
+        if not _secrets.compare_digest(stored_recovery_value, typed_recovery_key):
+            raise HTTPException(status_code=401, detail="Incorrect recovery key.")
 
     # Keep the original salt — we can't re-derive the old DB key without the old passphrase
     # The API key was encrypted with the original passphrase+salt; we try to re-encrypt it

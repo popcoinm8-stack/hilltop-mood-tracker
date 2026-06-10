@@ -746,7 +746,7 @@ Yuxor's `/chat/completions` endpoint returns Server-Sent Events (SSE) by default
 
 ## Known Limitations
 
-- **PIN lock is cosmetic.** The lock screen + keypad in the frontend is not real security (DB is plaintext on disk; PIN is stored unhashed in localStorage). For real security, Phase 3 will implement DB encryption via SQLCipher with a passphrase-derived key. The cloud API key in `data/config.json` is the other sensitive secret on disk.
+- **Encryption at rest (Phase S2).** The SQLite database is encrypted with SQLCipher (pysqlcipher3). The passphrase-derived key (scrypt, N=2^14, r=8, p=1) is held in memory only while the vault is unlocked. The cloud API key is encrypted under the same passphrase. A one-time recovery key is generated at setup and hashed (SHA-256) for storage — the plaintext is shown once. Lost passphrase + lost recovery key = unrecoverable data.
 - **No multi-user support.** Single local user only.
 - **No data migration scripts.** The `init_db()` migrations are one-way additive. There's no downgrade path.
 - **LLM prompts are hardcoded strings.** Changing the reflection style requires editing `app/llm.py`.
@@ -1027,3 +1027,62 @@ Third-party dependencies not in requirements.txt (installed separately or vendor
 - Added `doCorrelations()` — POSTs to `/narrate-correlations`, polls, renders
 - Added `renderCorrelations()` — renders tag×signal table (colored counts), lead/lag cards, LLM narration block
 - Settings: added "Correlations" model override field
+
+---
+
+## Phase S2 Changelog — Encryption at Rest
+
+### `app/crypto.py` (new)
+- KDF: scrypt (N=2^14, r=8, p=1, dklen=32) — strongest params available on this Windows build
+- `derive_db_key()` → 32-byte raw key for SQLCipher PRAGMA key
+- `derive_aes_key()` → 16-byte AES key + 16-byte HMAC key for config encryption
+- AES-128-GCM encryption for config values (API key), with random nonce per encryption
+- `hash_recovery_key()` → SHA-256 hash for verifying recovery key without storing plaintext
+- `verify_recovery_key()` → constant-time comparison against stored hash
+- `passphrase_strength_hint()` → plain-English strength feedback for the UI
+
+### `app/vault.py` (new)
+- `Vault` class: singleton managing in-memory key state (db_key, config_key_aes, config_key_hmac, salt)
+- `unlock(passphrase)` → derives keys, opens SQLCipher DB, sets connection factory
+- `lock()` → closes DB connection, clears all keys from memory
+- `setup_vault()` → generates salt, stores vault.json, marks db_encrypted=True
+- `get_vault_state()` → returns VaultState (is_setup, is_unlocked, has_recovery_key, db_encrypted)
+- `change_passphrase()` → re-encrypts DB and vault.json with new passphrase-derived key
+- `_open_sqlcipher_db()` → opens encrypted DB with hex key, PRAGMA cipher_compatibility=4
+- Recovery key stored as SHA-256 hash (not plaintext) — backward-compatible with legacy plaintext vaults
+
+### `app/main.py`
+- Added `GET /vault-status` — returns VaultState dict for frontend
+- Added `POST /vault-setup` — first-time setup: creates vault, encrypts DB, generates recovery key, verifies encrypted DB, moves plaintext aside
+- Added `POST /vault-unlock` — unlocks vault, decrypts API key into active LLM config
+- Added `POST /vault-lock` — locks vault, clears keys
+- Added `POST /vault-recovery-unlock` — unlock with recovery key, set new passphrase (DB key unchanged)
+- Added vault-lock middleware: blocks all API calls except vault endpoints when vault is set up but locked
+- `/vault-status` and static files bypass middleware; root `/` also bypasses (serves lock screen)
+
+### `app/database.py`
+- Added `VaultLockedError` exception raised when DB access is attempted while vault is locked
+- `install_vault_connection_factory()` — allows vault to inject SQLCipher connection into all DB operations
+- `get_connection()` — routes through vault factory when set; raises VaultLockedError if vault is locked
+- `init_db()` — detects encrypted DB (sqlite3 can't open it) and returns early; vault handles schema
+- `export_all()` — now includes top-level `"tags"` key with all tags (fixes orphaned-tag export bug)
+- `import_data()` — now imports orphaned tags from the top-level `"tags"` key
+
+### `app/static/index.html`
+- Replaced cosmetic PIN lock screen with vault unlock/setup UI:
+  - **Unlock screen**: passphrase input, show/hide toggle, "Forgot passphrase?" link
+  - **Setup screen**: passphrase + confirm, strength hint, warning about data loss, one-time recovery key display
+  - **Recovery screen**: recovery key input + new passphrase + confirm
+- `initVaultUI()` replaces `initPinLock()` — fetches `/vault-status` and shows the correct screen
+- All PIN-related CSS/JS removed (`.pin-*`, `PIN_KEY`, `checkPin`, `buildPinKeypad`, etc.)
+- New CSS classes: `.vault-*` for the lock/setup screens
+- Recovery key shown once at setup with copy-to-clipboard; user must confirm understanding of data-loss risk
+
+### `data/vault.json` (new, gitignored)
+- Stores: version, salt (base64), encrypted_api_key (AES-GCM), recovery_key_hash (SHA-256), db_encrypted flag, db_path_b64, scrypt params
+- Never contains plaintext passphrase, key, or recovery key
+- Legacy vaults storing plaintext recovery key are supported (backward-compatible verification)
+
+### `data/mood.db.plaintext.backup`
+- Created automatically by `vault-setup` before encrypting the DB
+- Kept indefinitely as a safety net; never auto-deleted

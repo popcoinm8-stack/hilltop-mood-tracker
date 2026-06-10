@@ -141,32 +141,19 @@ def generate_recovery_key() -> str:
     return secrets.token_urlsafe(18)[:24]
 
 
-def encrypt_recovery_key(recovery_key: str, passphrase: str, salt: bytes) -> str:
-    """Store the recovery key.
-
-    recovery_key: the user's recovery key
-    passphrase: the user's passphrase (used to derive a key for encrypting the recovery key)
-    salt: the vault salt
-
-    The recovery key itself is stored so it can be shown to the user.
-    This function also returns the recovery_key as-is for storage in vault.json.
+def hash_recovery_key(recovery_key: str) -> str:
+    """Hash a recovery key for storage. Uses SHA-256 with a fixed pepper.
+    
+    This allows verification without needing the passphrase.
+    The hash is stored in vault.json and compared against the user's input.
     """
-    # Store the recovery key as-is (it'll be shown to the user)
-    return recovery_key
+    import hashlib as _hl
+    return _hl.sha256(recovery_key.encode("utf-8")).hexdigest()
 
 
-def decrypt_recovery_key(encrypted: str, passphrase: str, salt: bytes) -> Optional[str]:
-    """Attempt to decrypt the recovery key using the given passphrase."""
-    try:
-        return decrypt_value(passphrase, encrypted, salt)
-    except Exception:
-        return None
-
-
-def verify_recovery_key(recovery_key: str, encrypted: str, passphrase: str, salt: bytes) -> bool:
-    """Verify a typed recovery key against the stored encrypted version."""
-    decrypted = decrypt_recovery_key(encrypted, passphrase, salt)
-    return secrets.compare_digest(decrypted or "", recovery_key)
+def verify_recovery_key(recovery_key: str, stored_hash: str) -> bool:
+    """Verify a typed recovery key against the stored hash."""
+    return secrets.compare_digest(hash_recovery_key(recovery_key), stored_hash)
 
 
 # ---------------------------------------------------------------------------

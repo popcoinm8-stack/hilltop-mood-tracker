@@ -41,13 +41,19 @@ def _immediate_cleanup():
     except Exception as exc:
         print(f"[run] Whisper cleanup warning: {exc}")
 
-    # 2. Tell Ollama to drop the LLM from memory.
+    # 2. For Ollama transport: tell it to drop the LLM from memory.
+    #    No-op for openai_compatible.
     try:
         import httpx
-        from app.llm import OLLAMA_URL, MODEL
-        resp = httpx.post(OLLAMA_URL, json={"model": MODEL, "keep_alive": 0}, timeout=10)
-        resp.raise_for_status()
-        print("[run] Ollama model unloaded.")
+        from app import llm
+        cfg = llm.get_config()
+        if cfg.get("transport") == "ollama":
+            base_url = cfg.get("base_url", "http://localhost:11434")
+            model = cfg.get("model", "")
+            url = base_url.rstrip("/") + "/api/generate"
+            resp = httpx.post(url, json={"model": model, "keep_alive": 0}, timeout=10)
+            resp.raise_for_status()
+            print("[run] Ollama model unloaded.")
     except Exception as exc:
         print(f"[run] Ollama cleanup warning (best-effort): {exc}")
 

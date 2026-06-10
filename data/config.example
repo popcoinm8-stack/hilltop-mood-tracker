@@ -1,0 +1,9 @@
+{
+  "transport": "openai_compatible",
+  "base_url": "https://api.yuxor.tech/v1",
+  "api_key": "",
+  "model": "claude-opus-4-7",
+  "request_timeout": 180,
+  "model_overrides": {},
+  "ollama_base_url": "http://localhost:11434"
+}

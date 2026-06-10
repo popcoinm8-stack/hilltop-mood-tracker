@@ -108,6 +108,39 @@ body {
   padding: 2.5rem 1.25rem 4rem;
 }
 
+/* ===== PROVIDER BADGE ===== */
+.provider-badge {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  z-index: 50;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.35rem 0.7rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+  letter-spacing: 0;
+  cursor: default;
+  max-width: 280px;
+}
+.provider-badge:hover { background: var(--bg-elevated); color: var(--text-secondary); border-color: var(--border-accent); }
+.provider-badge .provider-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.provider-dot.local { background: #5bca8e; }
+.provider-dot.cloud { background: #60a5fa; }
+.provider-dot.error { background: #f87171; }
+
 /* ===== THEME TOGGLE ===== */
 .theme-toggle {
   position: fixed;
@@ -441,6 +474,52 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
 .trends-section p { color: var(--text-secondary); white-space: pre-wrap; line-height: 1.7; font-size: 0.9rem; }
 .trends-section ul { padding-left: 1.2rem; }
 .trends-section li { color: var(--text-secondary); margin-bottom: 0.4rem; line-height: 1.6; font-size: 0.9rem; }
+
+/* ===== CHART SECTION ===== */
+.chart-section {
+  padding: 1rem 0.875rem;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+.chart-axis-label {
+  font-size: 0.65rem;
+  fill: var(--text-muted);
+  font-family: inherit;
+}
+.chart-grid-line {
+  stroke: var(--border-subtle);
+  stroke-width: 1;
+}
+.chart-signal-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.chart-signal-dot {
+  stroke-width: 2;
+}
+.chart-weekly-bar {
+  opacity: 0.7;
+}
+.chart-weekly-label {
+  font-size: 0.6rem;
+  fill: var(--text-muted);
+}
+.chart-tooltip {
+  position: absolute;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
 
 /* ===== TIMELINE ===== */
 .timeline-entry {
@@ -909,7 +988,136 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
   opacity: 0.7;
 }
 .tag-chip-remove:hover { opacity: 1; }
+
+/* ===== AUTO-STRUCT SUGGESTIONS ===== */
+.autostruct-section {
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  background: var(--bg-inset);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+.autostruct-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 0.25rem 0;
+}
+.autostruct-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.autostruct-signal-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.autostruct-signal-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 0.2rem;
+}
+.autostruct-signal-btns {
+  display: flex;
+  gap: 0.2rem;
+}
+.autostruct-signal-btn {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+}
+.autostruct-signal-btn:hover { border-color: var(--border-accent); }
+.autostruct-signal-btn.selected-low { background: #f87171; border-color: #f87171; color: #fff; }
+.autostruct-signal-btn.selected-med { background: #fbbf24; border-color: #fbbf24; color: #1a1a2e; }
+.autostruct-signal-btn.selected-high { background: #5bca8e; border-color: #5bca8e; color: #fff; }
+.autostruct-signal-btn.dimmed { opacity: 0.35; }
+.autostruct-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+.autostruct-tag-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  min-width: 70px;
+}
+.autostruct-suggested-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.4rem;
+  background: var(--accent-subtle);
+  border: 1px solid var(--border-accent);
+  border-radius: 99px;
+  font-size: 0.72rem;
+  color: var(--accent);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.autostruct-suggested-chip:hover { background: var(--accent-muted); }
+.autostruct-suggested-chip.accepted { background: var(--accent); color: var(--accent-text); }
+.autostruct-apply-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+.autostruct-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  padding: 0;
+  margin-left: 0.4rem;
+  text-decoration: underline;
+}
+.autostruct-dismiss:hover { color: var(--text-secondary); }
+.autostruct-error {
+  font-size: 0.8rem;
+  color: #f87171;
+  padding: 0.25rem 0;
+}
+.autostruct-btn {
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.autostruct-btn:hover { border-color: var(--border-accent); color: var(--accent); }
+.autostruct-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .tag-input-wrap {
+
   display: flex;
   gap: 0.3rem;
   align-items: center;
@@ -1190,6 +1398,179 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
 .search-result-date { font-weight: 600; font-size: 0.8rem; color: var(--accent); margin-bottom: 0.2rem; }
 .search-result-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
 .search-match { background: var(--accent-muted); color: var(--accent); border-radius: 2px; padding: 0 2px; }
+.ask-answer {
+  background: var(--bg-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1rem;
+}
+
+/* ===== SETTINGS TAB ===== */
+.settings-section {
+  margin-bottom: 1.75rem;
+}
+.settings-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.settings-transport-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.settings-transport-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.settings-transport-card:hover { border-color: var(--border-accent); }
+.settings-transport-card.selected { border-color: var(--accent); background: var(--accent-subtle); }
+.settings-transport-card input[type="radio"] { display: none; }
+.settings-transport-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  transition: border-color var(--transition-fast);
+}
+.settings-transport-card.selected .settings-transport-radio { border-color: var(--accent); }
+.settings-transport-radio-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: scale(0);
+  transition: transform var(--transition-fast);
+}
+.settings-transport-card.selected .settings-transport-radio-dot { transform: scale(1); }
+.settings-transport-info { flex: 1; }
+.settings-transport-name { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.2rem; }
+.settings-transport-desc { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
+.settings-transport-desc .warn { color: #f87171; }
+.settings-field {
+  margin-bottom: 0.75rem;
+}
+.settings-field label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 0.3rem;
+}
+.settings-field input[type="text"],
+.settings-field input[type="number"],
+.settings-field select {
+  width: 100%;
+  padding: 0.475rem 0.75rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.875rem;
+  transition: border-color var(--transition-fast);
+}
+.settings-field input:focus,
+.settings-field select:focus {
+  outline: none;
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px var(--accent-muted);
+}
+.settings-key-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+.settings-key-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.settings-key-dot.set { background: #5bca8e; }
+.settings-key-dot.unset { background: #f87171; }
+.settings-overrides-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.settings-override-field label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.2rem;
+}
+.settings-override-field input {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.82rem;
+}
+.settings-override-field input:focus {
+  outline: none;
+  border-color: var(--border-accent);
+}
+.settings-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+.settings-test-result {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+.settings-test-result.ok {
+  background: rgba(91,202,142,0.1);
+  border: 1px solid rgba(91,202,142,0.3);
+  color: #5bca8e;
+}
+.settings-test-result.error {
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.3);
+  color: #f87171;
+}
+.settings-section-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
 
 /* ===== PIN LOCK ===== */
 #pin-lock {
@@ -1241,6 +1622,83 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
 .pin-key:hover { background: var(--bg-inset); }
 .pin-key:active { transform: scale(0.95); }
 .pin-key.wide { font-size: 0.75rem; letter-spacing: 0; }
+
+/* ===== PRINT — clean clinician handout ===== */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-family: Georgia, 'Times New Roman', serif !important;
+  }
+  .app-wrap {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  .tab-bar,
+  .pin-overlay,
+  #recording-ui,
+  #transcribing-ui,
+  #mic-btn,
+  #reflect-btn,
+  #status,
+  .export-link,
+  .provider-badge,
+  #nd-intero-result,
+  #nd-history,
+  #charts-empty,
+  #charts-loading,
+  #corr-loading,
+  .autostruct-section,
+  .autostruct-loading,
+  #ask-loading,
+  #ask-result,
+  #nd-status,
+  .draft-actions,
+  .btn-secondary,
+  .btn-primary,
+  .btn-sm {
+    display: none !important;
+  }
+  .tab-panel,
+  .tab-panel.active {
+    display: block !important;
+  }
+  #clinician-draft {
+    border: none !important;
+    background: none !important;
+    color: #000 !important;
+    font-family: Georgia, serif !important;
+    font-size: 1rem !important;
+    line-height: 1.75 !important;
+    white-space: pre-wrap !important;
+    min-height: unset !important;
+    resize: none !important;
+    padding: 0 !important;
+  }
+  .draft-area,
+  .clinician-draft-area {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: none !important;
+  }
+  .clinician-draft-area label {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: #000 !important;
+    display: block !important;
+    margin-bottom: 1rem !important;
+  }
+  .draft-area label,
+  .clinician-date-range {
+    display: none !important;
+  }
+  h1, h2, h3 {
+    break-after: avoid !important;
+    color: #000 !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1263,7 +1721,11 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
   <div class="pin-keypad" id="pin-keypad"></div>
 </div>
 
-<div class="app-wrapper">
+<!-- Provider privacy badge -->
+<div class="provider-badge" id="provider-badge" title="Shows whether AI is running locally or via cloud">
+  <span class="provider-dot local" id="provider-dot"></span>
+  <span id="provider-label">Local model</span>
+</div>
 
 <div class="app-wrapper">
   <header class="app-header">
@@ -1280,6 +1742,7 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
     <button onclick="showTab('stats')">Stats</button>
     <button onclick="showTab('nd')">ND</button>
     <button onclick="showTab('breathe')">Breathe</button>
+    <button onclick="showTab('settings')">Settings</button>
   </div>
 
   <!-- Journal tab -->
@@ -1325,6 +1788,7 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
           <button class="signal-btn" data-signal="overwhelm" data-value="high" onclick="setSignal(this)">High</button>
         </div>
       </div>
+      <button id="autostruct-btn" class="autostruct-btn" onclick="runAutoStruct()">Suggest tags &amp; signals</button>
     </div>
 
     <!-- Tags -->
@@ -1375,6 +1839,15 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
       </div>
     </div>
 
+    <!-- Auto-struct suggestions -->
+    <div id="autostruct-section" class="autostruct-section" style="display:none;">
+      <div id="autostruct-loading" class="autostruct-loading" style="display:none;">
+        <div class="autostruct-spinner"></div>
+        <span>Analyzing entry…</span>
+      </div>
+      <div id="autostruct-content"></div>
+    </div>
+
     <div id="recording-ui">
       <span id="rec-dot"></span>
       <span id="rec-timer">0:00</span>
@@ -1393,6 +1866,7 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
   <div id="tab-trends" class="tab-panel">
     <div class="trends-controls" style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
       <button id="analyze-btn" class="btn-secondary" onclick="doAnalyzeTrends()">Analyze trends</button>
+      <button id="correlate-btn" class="btn-secondary" onclick="doCorrelations()">Correlations</button>
       <select id="trends-window" class="trends-window-select" style="padding:0.4rem 0.75rem;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:inherit;font-size:0.85rem;cursor:pointer;" onchange="doAnalyzeTrends()">
         <option value="30">30 days</option>
         <option value="60">60 days</option>
@@ -1401,6 +1875,44 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
         <option value="0">All time</option>
       </select>
     </div>
+
+    <!-- Signal charts -->
+    <div class="chart-section" style="margin-bottom:2rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem;">
+        <h2 style="font-size:0.95rem;font-weight:600;color:var(--text-secondary);">Signal trends</h2>
+        <select id="chart-window" onchange="loadCharts()" style="padding:0.3rem 0.6rem;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:inherit;font-size:0.8rem;cursor:pointer;">
+          <option value="30">30 days</option>
+          <option value="60">60 days</option>
+          <option value="90" selected>90 days</option>
+          <option value="180">180 days</option>
+        </select>
+      </div>
+      <div id="charts-loading" style="font-size:0.82rem;color:var(--text-muted);padding:0.5rem 0;">Loading charts…</div>
+      <div id="charts-empty" style="font-size:0.82rem;color:var(--text-muted);padding:0.5rem 0;display:none;">No signal data yet. Set signals in your journal entries.</div>
+      <div id="charts-container" style="display:none;">
+        <div style="display:flex;gap:0.4rem;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;">
+          <span style="font-size:0.68rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Signals</span>
+          <span class="chart-legend-item" style="color:#f87171;font-size:0.7rem;">Energy</span>
+          <span class="chart-legend-item" style="color:#a78bfa;font-size:0.7rem;">Sleep</span>
+          <span class="chart-legend-item" style="color:#60a5fa;font-size:0.7rem;">Sensory</span>
+          <span class="chart-legend-item" style="color:#fbbf24;font-size:0.7rem;">Overwhelm</span>
+        </div>
+        <div id="signal-chart-wrap" style="overflow-x:auto;margin-bottom:1rem;"></div>
+        <div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Spoons &amp; melt/shutdown</div>
+        <div id="weekly-chart-wrap" style="overflow-x:auto;"></div>
+      </div>
+    </div>
+
+    <!-- Correlations -->
+    <div id="correlation-section" class="chart-section" style="display:none;margin-bottom:2rem;">
+      <h2 style="font-size:0.95rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.75rem;">Correlations</h2>
+      <div id="corr-loading" style="display:none;" class="autostruct-loading">
+        <div class="autostruct-spinner"></div>
+        <span>Computing patterns…</span>
+      </div>
+      <div id="corr-content" style="display:none;"></div>
+    </div>
+
     <div id="trends-content"></div>
   </div>
 
@@ -1421,6 +1933,7 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
 
     <button id="clinician-since-btn" class="btn-sm" onclick="setSinceLastAppointment()" style="margin-bottom:0.75rem;">Since last appointment</button>
     <button id="clinician-mark-btn" class="btn-sm" onclick="markLastAppointment()" style="margin-bottom:0.75rem;margin-left:0.4rem;">Set today as last appointment</button>
+    <span id="clinician-appt-hint" style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem;display:block;"></span>
 
     <button id="clinician-generate-btn" class="btn-primary" onclick="doClinicianSummary()">Generate draft</button>
 
@@ -1453,6 +1966,21 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
     <!-- Calendar heatmap -->
     <h2 style="font-size:0.95rem;font-weight:600;color:var(--text-secondary);margin-top:1.5rem;">Activity</h2>
     <div id="calendar-heatmap" style="overflow-x:auto;"></div>
+
+    <!-- Ask your journal -->
+    <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--border-subtle);">
+      <h2 style="font-size:0.95rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.5rem;">Ask your journal</h2>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;">Ask a natural-language question about your entries. The answer will cite the entries it drew on.</p>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;flex-wrap:wrap;">
+        <input type="text" id="ask-input" placeholder="e.g. What patterns do you see in my sleep?" style="flex:1;min-width:200px;padding:0.5rem 0.75rem;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:inherit;font-size:0.9rem;" onkeydown="if(event.key==='Enter')doAskJournal()">
+        <button id="ask-btn" class="btn-primary" onclick="doAskJournal()">Ask</button>
+      </div>
+      <div id="ask-loading" style="display:none;" class="autostruct-loading">
+        <div class="autostruct-spinner"></div>
+        <span>Searching your journal…</span>
+      </div>
+      <div id="ask-result" style="display:none;margin-top:0.75rem;"></div>
+    </div>
   </div>
 
   <!-- Stats tab -->
@@ -1646,6 +2174,147 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
   </div>
 </div>
 
+<!-- Settings tab -->
+<div id="tab-settings" class="tab-panel">
+  <div class="settings-section">
+    <div class="settings-section-title">AI Provider</div>
+    <p class="settings-section-hint">Choose how your journal entries are processed. Local stays on this device. Cloud uses a third-party API — your entry text is sent to the provider.</p>
+    <div class="settings-transport-cards" id="transport-cards">
+      <div class="settings-transport-card" data-transport="ollama" onclick="selectTransport('ollama')">
+        <input type="radio" name="transport" value="ollama" id="radio-ollama">
+        <div class="settings-transport-radio"><div class="settings-transport-radio-dot"></div></div>
+        <div class="settings-transport-info">
+          <div class="settings-transport-name">Local (Ollama)</div>
+          <div class="settings-transport-desc">Runs entirely on this machine. No data leaves your device. Requires Ollama installed.</div>
+        </div>
+      </div>
+      <div class="settings-transport-card" data-transport="openai_compatible" onclick="selectTransport('openai_compatible')">
+        <input type="radio" name="transport" value="openai_compatible" id="radio-cloud">
+        <div class="settings-transport-radio"><div class="settings-transport-radio-dot"></div></div>
+        <div class="settings-transport-info">
+          <div class="settings-transport-name">Cloud (API)</div>
+          <div class="settings-transport-desc">Sends entry text to a third-party AI provider. <span class="warn">Your journal entries leave this device.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Local settings (shown when ollama selected) -->
+  <div id="settings-local" class="settings-section" style="display:none;">
+    <div class="settings-section-title">Local (Ollama) Settings</div>
+    <div class="settings-field">
+      <label for="settings-ollama-url">Ollama URL</label>
+      <input type="text" id="settings-ollama-url" placeholder="http://localhost:11434" oninput="markSettingsDirty()">
+    </div>
+    <div class="settings-field">
+      <label for="settings-local-model">Model</label>
+      <select id="settings-local-model" onchange="markSettingsDirty()">
+        <option value="">Loading...</option>
+      </select>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">
+        <button class="btn-sm" onclick="loadLocalModels()">&#8635; Refresh models</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cloud settings (shown when openai_compatible selected) -->
+  <div id="settings-cloud" class="settings-section" style="display:none;">
+    <div class="settings-section-title">Cloud (API) Settings</div>
+    <div class="settings-field">
+      <label for="settings-base-url">API Endpoint</label>
+      <input type="text" id="settings-base-url" placeholder="https://api.yuxor.tech/v1" oninput="markSettingsDirty()">
+    </div>
+    <div class="settings-field">
+      <label for="settings-api-key">API Key</label>
+      <input type="password" id="settings-api-key" placeholder="sk-..." autocomplete="off" oninput="markSettingsDirty()">
+      <div class="settings-key-status" id="settings-key-status"></div>
+    </div>
+    <div class="settings-field">
+      <label for="settings-cloud-model">Model</label>
+      <select id="settings-cloud-model" onchange="markSettingsDirty()">
+        <option value="">Loading...</option>
+      </select>
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">
+        <button class="btn-sm" onclick="loadCloudModels()">&#8635; Fetch available models</button>
+      </div>
+    </div>
+    <div class="settings-field">
+      <label for="settings-timeout">Request timeout (seconds)</label>
+      <input type="number" id="settings-timeout" min="10" max="600" value="180" oninput="markSettingsDirty()">
+    </div>
+    <div class="settings-field">
+      <label>Per-job model overrides <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional — leave blank to use default)</span></label>
+      <div class="settings-overrides-grid">
+        <div class="settings-override-field">
+          <label for="override-reflection">Reflection</label>
+          <input type="text" id="override-reflection" placeholder="claude-haiku-4-5" oninput="markSettingsDirty()">
+        </div>
+        <div class="settings-override-field">
+          <label for="override-trends">Trends</label>
+          <input type="text" id="override-trends" placeholder="claude-sonnet-4-6" oninput="markSettingsDirty()">
+        </div>
+        <div class="settings-override-field">
+          <label for="override-clinician">Clinician</label>
+          <input type="text" id="override-clinician" placeholder="claude-opus-4-7" oninput="markSettingsDirty()">
+        </div>
+        <div class="settings-override-field">
+          <label for="override-autostruct">Auto-struct</label>
+          <input type="text" id="override-autostruct" placeholder="claude-haiku-4-5" oninput="markSettingsDirty()" title="Model for tag/signal suggestions (fast/cheap recommended)">
+        </div>
+        <div class="settings-override-field">
+          <label for="override-ask-journal">Ask journal</label>
+          <input type="text" id="override-ask-journal" placeholder="claude-opus-4-7" oninput="markSettingsDirty()" title="Model for journal Q&A (strong model recommended)">
+        </div>
+        <div class="settings-override-field">
+          <label for="override-correlations">Correlations</label>
+          <input type="text" id="override-correlations" placeholder="claude-sonnet-4-6" oninput="markSettingsDirty()" title="Model for correlation narration">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-actions">
+    <button id="settings-save-btn" class="btn-primary" onclick="saveSettings()" disabled>Save settings</button>
+    <button id="settings-test-btn" class="btn-secondary" onclick="testSettingsConnection()">Test connection</button>
+    <div id="settings-test-result" class="settings-test-result" style="display:none;"></div>
+  </div>
+
+  <!-- Backup & Restore -->
+  <div class="settings-section" style="margin-top:1.5rem;">
+    <div class="settings-section-title">Backup &amp; Restore</div>
+    <p class="settings-section-hint">Download a full JSON backup of all your entries, tags, and weekly check-ins. Restore from a backup file — existing data is preserved by default.</p>
+    <div class="settings-field" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+      <button class="btn-secondary" onclick="doBackupDownload()">Download backup</button>
+      <span id="backup-download-status" style="font-size:0.78rem;color:var(--text-muted);"></span>
+    </div>
+    <div style="margin-top:0.75rem;">
+      <div class="settings-field">
+        <label for="restore-file" style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem;display:block;">Restore from backup</label>
+        <input type="file" id="restore-file" accept=".json" style="font-size:0.82rem;color:var(--text-secondary);">
+      </div>
+      <div style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <select id="restore-conflict-policy" style="padding:0.35rem 0.6rem;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:inherit;font-size:0.8rem;cursor:pointer;">
+          <option value="skip">On conflict: skip existing</option>
+          <option value="overwrite">On conflict: overwrite with backup</option>
+        </select>
+        <button id="restore-btn" class="btn-secondary" onclick="doRestore()">Restore</button>
+      </div>
+      <div id="restore-confirm" style="display:none;margin-top:0.75rem;padding:0.75rem;background:rgba(248,113,113,0.1);border:1px solid #f87171;border-radius:var(--radius-sm);">
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.5rem;">
+          <strong style="color:#f87171;">Warning:</strong> Overwrite mode will replace existing entries and weekly check-ins with data from the backup file. This cannot be undone. Make sure you have a current backup first.
+        </p>
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.5rem;">To confirm, type <strong>overwrite</strong> below:</p>
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          <input type="text" id="restore-confirm-input" placeholder="type 'overwrite'" style="flex:1;padding:0.35rem 0.5rem;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:inherit;font-size:0.82rem;">
+          <button class="btn-secondary" style="background:#f87171;color:#fff;border-color:#f87171;" onclick="confirmRestore()">Confirm restore</button>
+          <button class="btn-secondary" onclick="cancelRestore()">Cancel</button>
+        </div>
+      </div>
+      <div id="restore-status" style="margin-top:0.5rem;font-size:0.82rem;"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Timeline detail modal -->
 <div class="modal-overlay" id="entry-modal" onclick="closeModal(event)">
   <div class="modal-box">
@@ -1699,7 +2368,7 @@ function showTab(name) {
   document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   const buttons = document.querySelectorAll('.tab-bar button');
-  const tabNames = ['journal', 'trends', 'clinician', 'timeline', 'search', 'stats', 'nd', 'breathe'];
+  const tabNames = ['journal', 'trends', 'clinician', 'timeline', 'search', 'stats', 'nd', 'breathe', 'settings'];
   const idx = tabNames.indexOf(name);
   if (idx >= 0) buttons[idx].classList.add('active');
   if (name === 'timeline') loadTimeline();
@@ -1708,6 +2377,8 @@ function showTab(name) {
   if (name === 'clinician') initClinicianTab();
   if (name === 'nd') initNDTab();
   if (name === 'search') initSearchTab();
+  if (name === 'settings') initSettingsTab();
+  if (name === 'trends') loadCharts();
 }
 
 // ============================================================
@@ -1744,7 +2415,7 @@ async function doReflect() {
   const btn = document.getElementById('reflect-btn');
   const status = document.getElementById('status');
   btn.disabled = true;
-  status.textContent = 'Processing...';
+  status.textContent = 'Saving entry...';
   try {
     const res = await fetch('/reflect', {
       method: 'POST',
@@ -1766,10 +2437,42 @@ async function doReflect() {
     }
     const data = await res.json();
     currentEntryId = data.entry_id;
-    status.textContent = 'Entry saved.';
     window.lastTranscription = null;
     // Save tags for this entry
     await saveCurrentTags();
+
+    // Poll for reflection completion
+    status.textContent = 'Reflecting...';
+    const maxWait = 120000; // 2 minutes
+    const pollInterval = 1500;
+    let waited = 0;
+    let done = false;
+
+    while (waited < maxWait && !done) {
+      await sleep(pollInterval);
+      waited += pollInterval;
+      try {
+        const statusRes = await fetch('/reflect-status/' + data.entry_id);
+        if (statusRes.ok) {
+          const s = await statusRes.json();
+          if (s.status === 'ready') {
+            status.textContent = 'Entry saved.';
+            done = true;
+          } else if (s.status === 'error') {
+            status.textContent = 'Entry saved (reflection error — see timeline).';
+            done = true;
+          }
+          // pending: keep polling
+        }
+      } catch (_) {
+        // Network glitch: keep polling
+      }
+    }
+
+    if (!done) {
+      status.textContent = 'Entry saved (reflection still in progress).';
+    }
+
     // Clear form for next entry
     clearJournalEntry();
   } catch (e) {
@@ -1779,30 +2482,8 @@ async function doReflect() {
   }
 }
 
-async function doSaveSummary() {
-  if (currentEntryId === null) return;
-  const kept = document.getElementById('draft').value.trim();
-  if (!kept) return;
-  const btn = document.getElementById('save-btn');
-  const status = document.getElementById('status');
-  btn.disabled = true;
-  status.textContent = 'Saving...';
-  try {
-    const res = await fetch('/save-summary', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entry_id: currentEntryId, kept_summary: kept }),
-    });
-    // Re-save tags in case they were edited after reflect
-    await saveCurrentTags();
-    if (!res.ok) throw new Error('Save failed');
-    status.textContent = 'Saved.';
-    currentEntryId = null;
-  } catch (e) {
-    status.textContent = 'Error: ' + e.message;
-  } finally {
-    btn.disabled = false;
-  }
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // ============================================================
@@ -1831,6 +2512,168 @@ function clearSignals() {
   document.querySelectorAll('.signal-btn').forEach(b => {
     b.classList.remove('active-low', 'active-med', 'active-high');
   });
+}
+
+// ============================================================
+// AUTO-STRUCT: suggest tags & signals
+// ============================================================
+let autoStructPending = null; // { task_id, result, dismissed }
+
+async function runAutoStruct() {
+  const notes = document.getElementById('notes').value.trim();
+  if (!notes) return;
+  const btn = document.getElementById('autostruct-btn');
+  btn.disabled = true;
+  document.getElementById('autostruct-section').style.display = 'block';
+  document.getElementById('autostruct-loading').style.display = 'flex';
+  document.getElementById('autostruct-content').innerHTML = '';
+  autoStructPending = null;
+
+  try {
+    const res = await fetch('/autostruct', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entry_text: notes }),
+    });
+    if (!res.ok) throw new Error('Request failed');
+    const data = await res.json();
+
+    // Poll until ready
+    let done = false;
+    while (!done) {
+      await sleep(1200);
+      try {
+        const statusRes = await fetch('/autostruct-status/' + data.task_id);
+        const s = await statusRes.json();
+        if (s.status === 'ready') {
+          autoStructPending = { task_id: data.task_id, result: s.result, dismissed: false };
+          renderAutoStructSuggestions(s.result);
+          done = true;
+        } else if (s.status === 'error') {
+          renderAutoStructError(s.error || 'An error occurred.');
+          done = true;
+        }
+      } catch (_) {}
+    }
+  } catch (e) {
+    renderAutoStructError(e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function renderAutoStructSuggestions(result) {
+  document.getElementById('autostruct-loading').style.display = 'none';
+  const signals = result.signals || {};
+  const tags = result.tags || {};
+  const hasSignals = Object.values(signals).some(v => v !== null);
+  const hasTags = Object.values(tags).some(a => a && a.length > 0);
+
+  if (!hasSignals && !hasTags) {
+    document.getElementById('autostruct-content').innerHTML =
+      '<div style="font-size:0.82rem;color:var(--text-muted);">Could not infer anything from this entry. Set signals and tags manually.</div>';
+    return;
+  }
+
+  let html = '';
+
+  if (hasSignals) {
+    html += '<div style="margin-bottom:0.75rem;">';
+    html += '<div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.4rem;">Suggested signals (tap to accept)</div>';
+    const signalDefs = [
+      { key: 'energy', label: 'Energy' },
+      { key: 'sleep_quality', label: 'Sleep' },
+      { key: 'sensory_load', label: 'Sensory' },
+      { key: 'overwhelm', label: 'Overwhelm' },
+    ];
+    signalDefs.forEach(sig => {
+      const val = signals[sig.key];
+      html += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.25rem;">';
+      html += '<span style="font-size:0.72rem;color:var(--text-muted);min-width:65px;">' + sig.label + '</span>';
+      ['low','med','high'].forEach(lvl => {
+        const isSuggested = val === lvl;
+        const isActive = currentSignals[sig.key] === lvl;
+        const cls = 'autostruct-signal-btn' +
+          (isSuggested && isActive ? ' selected-' + lvl : '') +
+          (isSuggested && !isActive ? '' : (!isSuggested && !isActive ? ' dimmed' : ''));
+        const title = isSuggested ? 'Suggested' : '';
+        html += '<button class="' + cls + '"' +
+          (isSuggested ? ' onclick="acceptAutoSignal(\'' + sig.key + '\',\'' + lvl + '\')" title="' + title + '"' : ' disabled style="cursor:default;"') +
+          '>' + lvl.charAt(0).toUpperCase() + lvl.slice(1) + (isSuggested ? ' ★' : '') + '</button>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  if (hasTags) {
+    html += '<div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.4rem;">Suggested tags (click to add)</div>';
+    const tagDefs = [
+      { key: 'people', label: 'People' },
+      { key: 'places', label: 'Places' },
+      { key: 'activities', label: 'Activities' },
+      { key: 'triggers', label: 'Triggers' },
+    ];
+    tagDefs.forEach(cat => {
+      const tagList = tags[cat.key] || [];
+      if (tagList.length === 0) return;
+      const alreadyAdded = currentTags[cat.key].map(t => t.name.toLowerCase());
+      html += '<div class="autostruct-tag-row">';
+      html += '<span class="autostruct-tag-label">' + cat.label + '</span>';
+      tagList.forEach(tagName => {
+        const already = alreadyAdded.includes(tagName.toLowerCase());
+        html += '<button class="autostruct-suggested-chip' + (already ? ' accepted' : '') + '"' +
+          ' onclick="acceptAutoTag(\'' + cat.key + '\',\'' + tagName.replace(/'/g, "\\'") + '\')"' +
+          (already ? ' title="Already added"' : '') + '>' +
+          escHtml(tagName) + (already ? ' ✓' : '') + '</button>';
+      });
+      html += '</div>';
+    });
+  }
+
+  html += '<div class="autostruct-apply-hint">Signals highlighted ★ are suggestions. Click to accept or edit manually above.</div>';
+  html += '<button class="autostruct-dismiss" onclick="dismissAutoStruct()">Dismiss suggestions</button>';
+  document.getElementById('autostruct-content').innerHTML = html;
+}
+
+function acceptAutoSignal(key, value) {
+  // Accept the suggested signal
+  currentSignals[key] = value;
+  document.querySelectorAll('[data-signal="' + key + '"]').forEach(b => {
+    b.classList.remove('active-low', 'active-med', 'active-high');
+    if (b.dataset.value === value) {
+      b.classList.add('active-' + value);
+    }
+  });
+  // Re-render suggestions to update visual state
+  if (autoStructPending && autoStructPending.result) {
+    renderAutoStructSuggestions(autoStructPending.result);
+  }
+}
+
+function acceptAutoTag(category, tagName) {
+  addTag(category, tagName);
+  // Re-render suggestions to update visual state
+  if (autoStructPending && autoStructPending.result) {
+    renderAutoStructSuggestions(autoStructPending.result);
+  }
+}
+
+function dismissAutoStruct() {
+  autoStructPending = { task_id: null, result: null, dismissed: true };
+  document.getElementById('autostruct-section').style.display = 'none';
+}
+
+function renderAutoStructError(msg) {
+  document.getElementById('autostruct-loading').style.display = 'none';
+  document.getElementById('autostruct-content').innerHTML =
+    '<div class="autostruct-error">' + escHtml(msg) + '</div>';
+}
+
+function clearAutoStruct() {
+  autoStructPending = null;
+  document.getElementById('autostruct-section').style.display = 'none';
+  document.getElementById('autostruct-content').innerHTML = '';
 }
 
 // ============================================================
@@ -1948,6 +2791,7 @@ function clearJournalEntry() {
   currentEntryId = null;
   clearSignals();
   TAG_CATEGORIES.forEach(cat => { currentTags[cat] = []; renderTagChips(cat); });
+  clearAutoStruct();
 }
 
 
@@ -2125,6 +2969,292 @@ async function doSpeak() {
 }
 
 // ============================================================
+// CHART RENDERING (deterministic — no model call)
+// ============================================================
+let chartDataCache = null;
+
+async function loadCharts() {
+  const days = parseInt(document.getElementById('chart-window')?.value || '90', 10);
+  const loadingEl = document.getElementById('charts-loading');
+  const emptyEl = document.getElementById('charts-empty');
+  const containerEl = document.getElementById('charts-container');
+
+  loadingEl.style.display = 'block';
+  emptyEl.style.display = 'none';
+  containerEl.style.display = 'none';
+
+  try {
+    const res = await fetch('/signal-series?days=' + days);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    chartDataCache = data;
+
+    const series = data.series || [];
+    const hasData = series.some(e => Object.values(e).some((v, i) => i > 0 && v !== null));
+
+    loadingEl.style.display = 'none';
+    if (!hasData) {
+      emptyEl.style.display = 'block';
+      return;
+    }
+    containerEl.style.display = 'block';
+
+    renderSignalChart(series, document.getElementById('signal-chart-wrap'));
+    renderWeeklyChart(data.weekly_checkins || [], document.getElementById('weekly-chart-wrap'));
+  } catch (e) {
+    loadingEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+  }
+}
+
+function renderSignalChart(series, container) {
+  if (!series.length) return;
+  const W = Math.min(series.length * 14, 700);
+  const H = 120;
+  const PAD = { top: 8, right: 12, bottom: 28, left: 30 };
+  const innerW = W - PAD.left - PAD.right;
+  const innerH = H - PAD.top - PAD.bottom;
+
+  // Build points for each signal
+  const signals = [
+    { key: 'energy',      color: '#f87171', label: 'Energy' },
+    { key: 'sleep_quality', color: '#a78bfa', label: 'Sleep' },
+    { key: 'sensory_load', color: '#60a5fa', label: 'Sensory' },
+    { key: 'overwhelm',    color: '#fbbf24', label: 'Overwhelm' },
+  ];
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;height:${H}px;display:block;" aria-label="Signal trends chart">`;
+
+  // Grid lines (y=1, 2, 3)
+  for (let y = 1; y <= 3; y++) {
+    const py = PAD.top + innerH - ((y - 1) / 2) * innerH;
+    svg += `<line class="chart-grid-line" x1="${PAD.left}" y1="${py}" x2="${W - PAD.right}" y2="${py}"/>`;
+    svg += `<text class="chart-axis-label" x="${PAD.left - 4}" y="${py + 3}" text-anchor="end">${['','low','med','high'][y]}</text>`;
+  }
+
+  // X-axis dates (show every Nth label)
+  const labelEvery = Math.max(1, Math.floor(series.length / 8));
+  series.forEach((e, i) => {
+    if (i % labelEvery === 0) {
+      const px = PAD.left + (i / (series.length - 1 || 1)) * innerW;
+      const shortDate = e.date.slice(5); // MM-DD
+      svg += `<text class="chart-axis-label" x="${px}" y="${H - 4}" text-anchor="middle">${shortDate}</text>`;
+    }
+  });
+
+  // Draw lines for each signal
+  signals.forEach(sig => {
+    const points = [];
+    series.forEach((e, i) => {
+      const v = e[sig.key];
+      if (v !== null && v !== undefined) {
+        const px = PAD.left + (i / (series.length - 1 || 1)) * innerW;
+        const py = PAD.top + innerH - ((v - 1) / 2) * innerH;
+        points.push({ px, py });
+      }
+    });
+
+    // Draw line
+    if (points.length > 1) {
+      const d = points.map((p, i) => (i === 0 ? 'M' : 'L') + p.px.toFixed(1) + ',' + p.py.toFixed(1)).join(' ');
+      svg += `<path class="chart-signal-line" d="${d}" stroke="${sig.color}" opacity="0.8"/>`;
+    }
+
+    // Draw dots
+    points.forEach(p => {
+      svg += `<circle class="chart-signal-dot" cx="${p.px.toFixed(1)}" cy="${p.py.toFixed(1)}" r="3" fill="${sig.color}" stroke="var(--bg-card)"/>`;
+    });
+  });
+
+  svg += '</svg>';
+  container.innerHTML = svg;
+}
+
+function renderWeeklyChart(checkins, container) {
+  if (!checkins.length) {
+    container.innerHTML = '<p style="font-size:0.78rem;color:var(--text-muted);">No weekly check-ins recorded yet.</p>';
+    return;
+  }
+
+  const sorted = [...checkins].sort((a, b) => a.week_start.localeCompare(b.week_start));
+  const W = Math.max(sorted.length * 40, 300);
+  const H = 90;
+  const PAD = { top: 10, right: 12, bottom: 24, left: 30 };
+  const innerW = W - PAD.left - PAD.right;
+  const innerH = H - PAD.top - PAD.bottom;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;height:${H}px;display:block;" aria-label="Weekly spoons and events chart">`;
+
+  // Spoons bars (0-12)
+  const barW = Math.min(20, innerW / sorted.length - 4);
+  sorted.forEach((c, i) => {
+    const px = PAD.left + (i / Math.max(sorted.length - 1, 1)) * innerW - barW / 2;
+    const spoons = c.spoons || 0;
+    const barH = (spoons / 12) * innerH;
+    const py = PAD.top + innerH - barH;
+    svg += `<rect x="${px}" y="${py}" width="${barW}" height="${barH}" fill="#5bca8e" opacity="0.7" rx="2"/>`;
+    // Meltdown/shutdown markers
+    const melt = c.meltdown_count || 0;
+    const shut = c.shutdown_count || 0;
+    if (melt > 0 || shut > 0) {
+      svg += `<text x="${px + barW / 2}" y="${py - 3}" text-anchor="middle" font-size="8" fill="#f87171">${melt > 0 ? 'M' + melt : ''}</text>`;
+      svg += `<text x="${px + barW / 2}" y="${py - 13}" text-anchor="middle" font-size="8" fill="#a78bfa">${shut > 0 ? 'S' + shut : ''}</text>`;
+    }
+    // Date label
+    const shortDate = c.week_start.slice(5);
+    svg += `<text x="${px + barW / 2}" y="${H - 4}" text-anchor="middle" class="chart-weekly-label">${shortDate}</text>`;
+  });
+
+  // Y axis labels
+  [0, 6, 12].forEach(v => {
+    const py = PAD.top + innerH - (v / 12) * innerH;
+    svg += `<text class="chart-axis-label" x="${PAD.left - 4}" y="${py + 3}" text-anchor="end">${v}</text>`;
+  });
+  svg += `<text class="chart-axis-label" x="${PAD.left - 4}" y="${PAD.top - 2}" text-anchor="end">spoons</text>`;
+
+  svg += '</svg>';
+  container.innerHTML = svg;
+}
+
+// ============================================================
+// CORRELATIONS (Phase D)
+// ============================================================
+async function doCorrelations() {
+  const btn = document.getElementById('correlate-btn');
+  const section = document.getElementById('correlation-section');
+  const loadingEl = document.getElementById('corr-loading');
+  const contentEl = document.getElementById('corr-content');
+
+  section.style.display = 'block';
+  loadingEl.style.display = 'flex';
+  contentEl.style.display = 'none';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/narrate-correlations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days: 180 }),
+    });
+    if (!res.ok) throw new Error('Request failed');
+    const data = await res.json();
+
+    let done = false;
+    while (!done) {
+      await sleep(1200);
+      try {
+        const statusRes = await fetch('/narrate-correlations-status/' + data.task_id);
+        const s = await statusRes.json();
+        if (s.status === 'ready') {
+          renderCorrelations(s.result);
+          done = true;
+        } else if (s.status === 'error') {
+          contentEl.innerHTML = '<p style="color:#f87171;font-size:0.85rem;">Error: ' + escHtml(s.error || 'Unknown error') + '</p>';
+          contentEl.style.display = 'block';
+          done = true;
+        }
+      } catch (_) {}
+    }
+  } catch (e) {
+    contentEl.innerHTML = '<p style="color:#f87171;font-size:0.85rem;">Error: ' + escHtml(e.message) + '</p>';
+    contentEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    loadingEl.style.display = 'none';
+  }
+}
+
+function renderCorrelations(result) {
+  const contentEl = document.getElementById('corr-content');
+  const stats = result.stats || {};
+  const narration = result.narration || '';
+
+  let html = '';
+
+  // Tag × signal table
+  const tagStats = stats.tag_signal_stats || [];
+  if (tagStats.length > 0) {
+    html += '<div style="margin-bottom:1.25rem;">';
+    html += '<div style="font-size:0.7rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.6rem;">Tag × Signal breakdown</div>';
+    html += '<div style="overflow-x:auto;">';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:0.78rem;">';
+    html += '<thead><tr style="border-bottom:1px solid var(--border);">';
+    html += '<th style="text-align:left;padding:0.3rem 0.5rem;color:var(--text-muted);font-weight:600;">Tag</th>';
+    html += '<th style="text-align:center;padding:0.3rem 0.5rem;color:var(--text-muted);font-weight:600;">Entries</th>';
+    ['energy','sleep_quality','sensory_load','overwhelm'].forEach(sig => {
+      html += '<th style="text-align:center;padding:0.3rem 0.3rem;color:var(--text-muted);font-weight:600;">' + sig.replace('_',' ') + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    tagStats.forEach(ts => {
+      const total = ts.total || 0;
+      html += '<tr style="border-bottom:1px solid var(--border-subtle);">';
+      html += '<td style="padding:0.35rem 0.5rem;"><span class="tl-tag-chip">' + escHtml(ts.tag_name) + '</span></td>';
+      html += '<td style="text-align:center;padding:0.35rem 0.5rem;color:var(--text-secondary);">' + total + '</td>';
+      ['energy','sleep_quality','sensory_load','overwhelm'].forEach(sig => {
+        const dist = ts[sig] || {};
+        const parts = [];
+        if (dist.low) parts.push('<span style="color:#f87171">low:' + dist.low + '</span>');
+        if (dist.med) parts.push('<span style="color:#fbbf24">med:' + dist.med + '</span>');
+        if (dist.high) parts.push('<span style="color:#5bca8e">high:' + dist.high + '</span>');
+        html += '<td style="text-align:center;padding:0.35rem 0.3rem;">' + (parts.join(' ') || '—') + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    html += '</div>';
+    html += '</div>';
+  } else {
+    html += '<p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem;">No tagged entries with signals in the last 180 days. Tag some entries to see patterns.</p>';
+  }
+
+  // Lead/lag
+  const ll = stats.lead_lag || {};
+  const ps = ll.poor_sleep_preceding_overwhelm || {};
+  const he = ll.high_energy_preceding_overwhelm || {};
+
+  html += '<div style="margin-bottom:1.25rem;">';
+  html += '<div style="font-size:0.7rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.6rem;">Day-to-day patterns</div>';
+  html += '<div style="display:flex;gap:1.5rem;flex-wrap:wrap;">';
+
+  if (ps.poor_sleep_days > 0) {
+    html += '<div style="flex:1;min-width:160px;padding:0.75rem;background:var(--bg-inset);border-radius:var(--radius-md);border:1px solid var(--border-subtle);">';
+    html += '<div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.3rem;">Poor sleep → next-day overwhelm</div>';
+    html += '<div style="font-size:0.78rem;color:var(--text-secondary);">';
+    html += '<span style="color:#a78bfa;">' + ps.poor_sleep_days + '</span> low-sleep days tracked<br>';
+    html += '<span style="color:#f87171;">' + ps.followed_by_high_overwhelm + '</span> followed by high overwhelm<br>';
+    html += '(' + (ps.pct || '?') + '%)';
+    html += '</div></div>';
+  }
+
+  if (he.high_energy_days > 0) {
+    html += '<div style="flex:1;min-width:160px;padding:0.75rem;background:var(--bg-inset);border-radius:var(--radius-md);border:1px solid var(--border-subtle);">';
+    html += '<div style="font-size:0.72rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.3rem;">High energy → next-day overwhelm</div>';
+    html += '<div style="font-size:0.78rem;color:var(--text-secondary);">';
+    html += '<span style="color:#5bca8e;">' + he.high_energy_days + '</span> high-energy days tracked<br>';
+    html += '<span style="color:#f87171;">' + he.followed_by_high_overwhelm + '</span> followed by high overwhelm<br>';
+    html += '(' + (he.pct || '?') + '%)';
+    html += '</div></div>';
+  }
+
+  if (ps.poor_sleep_days === 0 && he.high_energy_days === 0) {
+    html += '<p style="font-size:0.82rem;color:var(--text-muted);">Not enough consecutive-day data yet. Log signals daily to see day-to-day patterns.</p>';
+  }
+
+  html += '</div></div>';
+
+  // LLM narration
+  if (narration) {
+    html += '<div style="margin-top:0.5rem;padding:0.875rem 1rem;background:var(--bg-inset);border-radius:var(--radius-md);border:1px solid var(--border-subtle);">';
+    html += '<div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.5rem;">Observations</div>';
+    html += '<p style="font-size:0.875rem;color:var(--text-secondary);line-height:1.65;white-space:pre-wrap;">' + escHtml(narration) + '</p>';
+    html += '</div>';
+  }
+
+  contentEl.innerHTML = html;
+  contentEl.style.display = 'block';
+}
+
+// ============================================================
 // TRENDS TAB
 // ============================================================
 async function doAnalyzeTrends() {
@@ -2185,7 +3315,15 @@ function renderTimeline(entries) {
   const container = document.getElementById('timeline-content');
   if (!entries || entries.length === 0) { container.innerHTML = '<p class="timeline-empty">No entries yet.</p>'; return; }
   container.innerHTML = entries.map(e => {
-    const summaryBadge = e.has_kept_summary ? '<span style="color:#5bca8e">&#10003;</span>' : '<span style="color:#4a4a64">&#8212;</span>';
+    const status = e.reflection_status || 'ready';
+    let summaryBadge;
+    if (status === 'pending') {
+      summaryBadge = '<span style="color:#fbbf24" title="Reflection in progress">&#8987;</span>';
+    } else if (status === 'error') {
+      summaryBadge = '<span style="color:#f87171" title="Reflection failed">&#9888;</span>';
+    } else {
+      summaryBadge = e.has_kept_summary ? '<span style="color:#5bca8e" title="Reflection complete">&#10003;</span>' : '<span style="color:#4a4a64" title="No reflection">&#8212;</span>';
+    }
     const signals = e.signals || {};
     const signalDots = [
       { key: 'energy', label: 'E' },
@@ -2271,7 +3409,15 @@ async function openEntry(entryDate) {
     if (entry.transcription) {
       body += '<div class="modal-field"><strong>Dictation</strong><p style="font-style:italic;color:var(--text-secondary)">' + escHtml(entry.transcription) + '</p></div>';
     }
-    body += '<div class="modal-field"><strong>AI reflection</strong><p>' + escHtml(entry.kept_summary || '') + '</p></div>';
+    body += '<div class="modal-field"><strong>AI reflection</strong>';
+    if (entry.reflection_status === 'pending') {
+      body += '<p style="color:var(--text-muted);font-style:italic;">Reflecting... this will appear shortly.</p>';
+    } else if (entry.reflection_status === 'error') {
+      body += '<p style="color:#f87171;font-style:italic;">Reflection generation failed. The entry was still saved.</p>';
+    } else {
+      body += '<p>' + escHtml(entry.kept_summary || '') + '</p>';
+    }
+    body += '</div>';
     if (entry.draft && entry.draft !== entry.kept_summary) {
       body += '<div class="modal-field"><strong>Draft</strong><p>' + escHtml(entry.draft) + '</p></div>';
     }
@@ -2976,7 +4122,9 @@ async function doClinicianSummary() {
     }
     const data = await res.json();
     draftEl.value = data.draft;
-    metaEl.textContent = data.entry_count + ' entries found in range';
+    const parts = [data.entry_count + ' entries'];
+    if (data.checkin_count > 0) parts.push(data.checkin_count + ' weeks of check-ins');
+    metaEl.textContent = parts.join(', ') + ' in range';
     draftArea.style.display = 'block';
     statusEl.textContent = '';
   } catch (e) {
@@ -3030,6 +4178,19 @@ function doClinicianPrintView() {
 
   const generated_date = new Date().toISOString().slice(0, 10);
 
+  const draftLines = draft.split('\n');
+  const sectionsHtml = draftLines.map(line => {
+    if (line.startsWith('## ')) {
+      return '<h2>' + escHtml(line.slice(3)) + '</h2>';
+    } else if (line.startsWith('- ')) {
+      return '<li>' + escHtml(line.slice(2)) + '</li>';
+    } else if (line.trim() === '') {
+      return '';
+    } else {
+      return '<p>' + escHtml(line) + '</p>';
+    }
+  }).join('');
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3037,18 +4198,64 @@ function doClinicianPrintView() {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Clinician Summary — ${fromEl.value} to ${toEl.value}</title>
 <style>
-  body { font-family: Georgia, serif; max-width: 720px; margin: 3rem auto; padding: 0 2rem; color: #1a1a1a; line-height: 1.7; }
-  h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
-  .meta { color: #666; font-size: 0.875rem; margin-bottom: 2rem; }
-  .draft { font-size: 1rem; white-space: pre-wrap; }
-  .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.8rem; font-style: italic; }
-  @media print { body { margin: 1.5rem 1rem; } }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    max-width: 680px;
+    margin: 3rem auto;
+    padding: 0 2rem;
+    color: #1a1a1a;
+    line-height: 1.75;
+    background: #fff;
+  }
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: #1a1a1a;
+  }
+  h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 1.75rem;
+    margin-bottom: 0.5rem;
+    color: #3a3a5a;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 0.25rem;
+  }
+  .meta {
+    color: #666;
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+    font-style: italic;
+  }
+  .draft p {
+    margin: 0 0 0.75rem 0;
+  }
+  .draft ul {
+    margin: 0.25rem 0 0.75rem 1.25rem;
+    padding: 0;
+  }
+  .draft ul li {
+    margin-bottom: 0.35rem;
+  }
+  .footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+    color: #999;
+    font-size: 0.8rem;
+    font-style: italic;
+  }
+  @media print {
+    body { margin: 1rem 0.5rem; }
+    h2 { break-inside: avoid; }
+  }
 </style>
 </head>
 <body>
 <h1>Clinician Appointment Summary</h1>
-<p class="meta">Period: ${fromEl.value} to ${toEl.value} &nbsp;|&nbsp; Prepared: ${generated_date}</p>
-<div class="draft">${escHtml(draft).replace(/\n/g, '<br>')}</div>
+<p class="meta">Period: ${fromEl.value} to ${toEl.value} &nbsp;&middot;&nbsp; Prepared: ${generated_date}</p>
+<div class="draft">${sectionsHtml}</div>
 <p class="footer">This summary was drafted with AI assistance from personal journal entries. Review and edit before sharing with your clinician.</p>
 </body>
 </html>`;
@@ -3061,16 +4268,22 @@ function doClinicianPrintView() {
 function setSinceLastAppointment() {
   const fromEl = document.getElementById('clinician-from');
   const toEl = document.getElementById('clinician-to');
+  const hintEl = document.getElementById('clinician-appt-hint');
   const lastAppt = getLastAppointment();
   if (lastAppt) {
     fromEl.value = lastAppt;
+    hintEl.textContent = 'Showing entries since ' + lastAppt;
+  } else {
+    hintEl.textContent = 'No last appointment saved. Use "Set today as last appointment" first.';
   }
 }
 
 function markLastAppointment() {
   const toEl = document.getElementById('clinician-to');
+  const hintEl = document.getElementById('clinician-appt-hint');
   const today = toEl.value || new Date().toISOString().slice(0, 10);
   setLastAppointment(today);
+  hintEl.textContent = 'Last appointment saved as ' + today + '. Click "Since last appointment" to set the date range.';
   document.getElementById('clinician-status').textContent = 'Last appointment date saved.';
 }
 
@@ -3113,6 +4326,85 @@ async function doSearch() {
   } catch (e) {
     resultsEl.innerHTML = '<p style="color:#f87171;font-size:0.875rem;">Error: ' + escHtml(e.message) + '</p>';
   }
+}
+
+// ============================================================
+// ASK YOUR JOURNAL
+// ============================================================
+async function doAskJournal() {
+  const question = document.getElementById('ask-input').value.trim();
+  if (!question) return;
+  const btn = document.getElementById('ask-btn');
+  const loadingEl = document.getElementById('ask-loading');
+  const resultEl = document.getElementById('ask-result');
+  btn.disabled = true;
+  loadingEl.style.display = 'flex';
+  resultEl.style.display = 'none';
+
+  try {
+    const res = await fetch('/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+    });
+    if (!res.ok) throw new Error('Request failed');
+    const data = await res.json();
+
+    let done = false;
+    while (!done) {
+      await sleep(1200);
+      try {
+        const statusRes = await fetch('/ask-status/' + data.task_id);
+        const s = await statusRes.json();
+        if (s.status === 'ready') {
+          renderAskResult(s.result);
+          done = true;
+        } else if (s.status === 'error') {
+          resultEl.innerHTML = '<p style="color:#f87171;font-size:0.85rem;">Error: ' + escHtml(s.error || 'Unknown error') + '</p>';
+          resultEl.style.display = 'block';
+          done = true;
+        }
+      } catch (_) {}
+    }
+  } catch (e) {
+    resultEl.innerHTML = '<p style="color:#f87171;font-size:0.85rem;">Error: ' + escHtml(e.message) + '</p>';
+    resultEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    loadingEl.style.display = 'none';
+  }
+}
+
+function renderAskResult(result) {
+  const resultEl = document.getElementById('ask-result');
+  const method = result.method || 'keyword';
+  const methodNote = method === 'embeddings'
+    ? ' (semantic similarity)'
+    : method === 'no_entries'
+    ? ''
+    : ' (keyword matching)';
+
+  let html = '<div class="ask-answer">';
+  html += '<p style="color:var(--text-primary);line-height:1.65;white-space:pre-wrap;">' + escHtml(result.answer || '') + '</p>';
+  html += '</div>';
+
+  // Citations
+  const citedDates = result.cited_dates || [];
+  if (citedDates.length > 0) {
+    html += '<div style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-muted);">';
+    html += 'Based on entries from: ';
+    html += citedDates.map(d => {
+      return '<button onclick="openEntry(\'' + d + '\')" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.78rem;padding:0;margin:0 0.2rem;text-decoration:underline;">' + escHtml(d) + '</button>';
+    }).join(', ');
+    html += '</div>';
+  }
+
+  html += '<div style="margin-top:0.4rem;font-size:0.72rem;color:var(--text-muted);">';
+  html += 'Retrieval: ' + escHtml(method) + methodNote + ' · ~' + (result.token_count || '?') + ' tokens context';
+  html += '</div>';
+
+  resultEl.innerHTML = html;
+  resultEl.style.display = 'block';
 }
 
 // ============================================================
@@ -3398,9 +4690,16 @@ async function openEntry(entryDate) {
       body += '<div class="modal-field"><strong>Dictation</strong><p style="font-style:italic;color:var(--text-secondary)">' + escHtml(entry.transcription) + '</p></div>';
     }
     // AI reflection
-    if (entry.kept_summary) {
-      body += '<div class="modal-field"><strong>AI reflection</strong><p>' + escHtml(entry.kept_summary) + '</p></div>';
+    body += '<div class="modal-field"><strong>AI reflection</strong>';
+    const reflStatus = entry.reflection_status || 'ready';
+    if (reflStatus === 'pending') {
+      body += '<p style="color:var(--text-muted);font-style:italic;">Reflecting... this will appear shortly.</p>';
+    } else if (reflStatus === 'error') {
+      body += '<p style="color:#f87171;font-style:italic;">Reflection generation failed. The entry was still saved.</p>';
+    } else {
+      body += '<p>' + escHtml(entry.kept_summary || '') + '</p>';
     }
+    body += '</div>';
     // Draft (legacy)
     if (entry.draft && entry.draft !== entry.kept_summary) {
       body += '<div class="modal-field"><strong>Draft</strong><p>' + escHtml(entry.draft) + '</p></div>';
@@ -3512,9 +4811,396 @@ function initPinLock() {
 }
 
 // ============================================================
+// SETTINGS TAB
+// ============================================================
+let settingsDirty = false;
+
+function selectTransport(transport) {
+  document.querySelectorAll('.settings-transport-card').forEach(card => {
+    card.classList.toggle('selected', card.dataset.transport === transport);
+    card.querySelector('input').checked = card.dataset.transport === transport;
+  });
+  document.getElementById('settings-local').style.display = transport === 'ollama' ? 'block' : 'none';
+  document.getElementById('settings-cloud').style.display = transport === 'openai_compatible' ? 'block' : 'none';
+  markSettingsDirty();
+}
+
+function markSettingsDirty() {
+  settingsDirty = true;
+  const btn = document.getElementById('settings-save-btn');
+  if (btn) btn.disabled = false;
+}
+
+async function initSettingsTab() {
+  settingsDirty = false;
+  const btn = document.getElementById('settings-save-btn');
+  if (btn) btn.disabled = true;
+  document.getElementById('settings-save-status').textContent = '';
+  document.getElementById('settings-test-result').style.display = 'none';
+  document.getElementById('settings-save-btn').textContent = 'Save settings';
+
+  try {
+    const res = await fetch('/settings');
+    if (!res.ok) return;
+    const cfg = await res.json();
+
+    // Transport
+    const transport = cfg.transport || 'ollama';
+    selectTransport(transport);
+
+    // Local
+    document.getElementById('settings-ollama-url').value = cfg.ollama_base_url || 'http://localhost:11434';
+    if (transport === 'ollama') {
+      loadLocalModels(cfg.model || '');
+    } else {
+      document.getElementById('settings-local').style.display = 'none';
+    }
+
+    // Cloud
+    document.getElementById('settings-base-url').value = cfg.base_url || 'https://api.yuxor.tech/v1';
+    document.getElementById('settings-timeout').value = cfg.request_timeout || 180;
+    const keyStatus = document.getElementById('settings-key-status');
+    if (cfg.api_key_set) {
+      keyStatus.innerHTML = '<span class="settings-key-dot set"></span> API key set';
+    } else {
+      keyStatus.innerHTML = '<span class="settings-key-dot unset"></span> No key set';
+    }
+    document.getElementById('settings-api-key').value = '';
+    if (transport === 'openai_compatible') {
+      document.getElementById('settings-cloud').style.display = 'block';
+      loadCloudModels(cfg.model || '');
+    } else {
+      document.getElementById('settings-cloud').style.display = 'none';
+    }
+
+    // Overrides
+    const overrides = cfg.model_overrides || {};
+    document.getElementById('override-reflection').value = overrides.reflection || '';
+    document.getElementById('override-trends').value = overrides.trends || '';
+    document.getElementById('override-clinician').value = overrides.clinician || '';
+    document.getElementById('override-autostruct').value = overrides.autostruct || '';
+    document.getElementById('override-ask-journal').value = overrides.ask_journal || '';
+    document.getElementById('override-correlations').value = overrides.correlations || '';
+
+  } catch (e) {
+    console.error('Failed to load settings:', e);
+  }
+}
+
+async function loadLocalModels(selected) {
+  const select = document.getElementById('settings-local-model');
+  select.innerHTML = '<option value="">Loading...</option>';
+  try {
+    const res = await fetch('/local-models');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const models = data.models || [];
+    if (models.length === 0) {
+      select.innerHTML = '<option value="">No models found — is Ollama running?</option>';
+      return;
+    }
+    select.innerHTML = models.map(m =>
+      '<option value="' + escHtml(m) + '">' + escHtml(m) + '</option>'
+    ).join('');
+    if (selected && models.includes(selected)) {
+      select.value = selected;
+    }
+  } catch (e) {
+    select.innerHTML = '<option value="">Could not reach Ollama</option>';
+  }
+}
+
+async function loadCloudModels(selected) {
+  const select = document.getElementById('settings-cloud-model');
+  select.innerHTML = '<option value="">Fetching models...</option>';
+  try {
+    const res = await fetch('/models');
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const models = data.models || [];
+    if (models.length === 0) {
+      // Provider doesn't expose /models — fall back to free-text with placeholder
+      select.innerHTML = '<option value="">Provider model list unavailable — enter manually</option>';
+      return;
+    }
+    // Group by family for nicer display
+    const groups = {};
+    models.forEach(m => {
+      const family = m.split('-')[0].split('/')[0];
+      if (!groups[family]) groups[family] = [];
+      groups[family].push(m);
+    });
+    let html = '';
+    Object.keys(groups).sort().forEach(family => {
+      html += '<optgroup label="' + escHtml(family.toUpperCase()) + '">';
+      groups[family].forEach(m => {
+        html += '<option value="' + escHtml(m) + '">' + escHtml(m) + '</option>';
+      });
+      html += '</optgroup>';
+    });
+    select.innerHTML = html;
+    if (selected && models.includes(selected)) {
+      select.value = selected;
+    }
+  } catch (e) {
+    select.innerHTML = '<option value="">Could not reach provider</option>';
+  }
+}
+
+async function saveSettings() {
+  const btn = document.getElementById('settings-save-btn');
+  const status = document.getElementById('settings-save-status');
+  const testResult = document.getElementById('settings-test-result');
+
+  const selectedTransport = document.querySelector('.settings-transport-card.selected')?.dataset.transport;
+  const payload = { transport: selectedTransport };
+
+  if (selectedTransport === 'ollama') {
+    payload.base_url = document.getElementById('settings-ollama-url').value.trim() || 'http://localhost:11434';
+    payload.model = document.getElementById('settings-local-model').value;
+    payload.ollama_base_url = payload.base_url;
+  } else {
+    payload.base_url = document.getElementById('settings-base-url').value.trim() || 'https://api.yuxor.tech/v1';
+    const apiKey = document.getElementById('settings-api-key').value.trim();
+    if (apiKey) payload.api_key = apiKey;
+    payload.model = document.getElementById('settings-cloud-model').value;
+    payload.request_timeout = parseInt(document.getElementById('settings-timeout').value) || 180;
+    const overrides = {};
+    const ref = document.getElementById('override-reflection').value.trim();
+    const trends = document.getElementById('override-trends').value.trim();
+    const clinician = document.getElementById('override-clinician').value.trim();
+    const autostruct = document.getElementById('override-autostruct').value.trim();
+    const askjournal = document.getElementById('override-ask-journal').value.trim();
+    const correlations = document.getElementById('override-correlations').value.trim();
+    if (ref) overrides.reflection = ref;
+    if (trends) overrides.trends = trends;
+    if (clinician) overrides.clinician = clinician;
+    if (autostruct) overrides.autostruct = autostruct;
+    if (askjournal) overrides.ask_journal = askjournal;
+    if (correlations) overrides.correlations = correlations;
+    if (Object.keys(overrides).length > 0) payload.model_overrides = overrides;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  status.textContent = '';
+  testResult.style.display = 'none';
+
+  try {
+    const res = await fetch('/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Save failed');
+    }
+    const saved = await res.json();
+    status.textContent = 'Settings saved.';
+    status.style.color = '#5bca8e';
+
+    // Update key status display
+    if (saved.api_key_set) {
+      document.getElementById('settings-key-status').innerHTML =
+        '<span class="settings-key-dot set"></span> API key set';
+      document.getElementById('settings-api-key').value = '';
+    }
+
+    // Refresh badge
+    updateProviderBadge();
+
+    settingsDirty = false;
+    btn.disabled = true;
+    btn.textContent = 'Save settings';
+
+    // Refresh the settings display to pick up any model changes
+    setTimeout(initSettingsTab, 500);
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    status.style.color = '#f87171';
+    btn.disabled = false;
+    btn.textContent = 'Save settings';
+  }
+}
+
+async function testSettingsConnection() {
+  const btn = document.getElementById('settings-test-btn');
+  const result = document.getElementById('settings-test-result');
+  btn.disabled = true;
+  btn.textContent = 'Testing...';
+  result.style.display = 'none';
+  try {
+    const res = await fetch('/test-connection', { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      result.className = 'settings-test-result ok';
+      result.innerHTML = 'Connection successful. Model <strong>' + escHtml(data.model_responded) + '</strong> responded.';
+    } else {
+      result.className = 'settings-test-result error';
+      result.innerHTML = 'Connection failed: ' + escHtml(data.error || 'Unknown error');
+    }
+    result.style.display = 'block';
+  } catch (e) {
+    result.className = 'settings-test-result error';
+    result.innerHTML = 'Connection failed: ' + escHtml(e.message);
+    result.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Test connection';
+  }
+}
+
+// ============================================================
 // INIT
 // ============================================================
 initPinLock();
+
+// ============================================================
+// BACKUP & RESTORE (Phase S1)
+// ============================================================
+async function doBackupDownload() {
+  const statusEl = document.getElementById('backup-download-status');
+  statusEl.textContent = 'Preparing backup\u2026';
+  try {
+    const res = await fetch('/export');
+    if (!res.ok) throw new Error('Export failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const today = new Date().toISOString().slice(0, 10);
+    a.download = 'mood-backup-' + today + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    statusEl.textContent = 'Backup downloaded.';
+    setTimeout(function() { statusEl.textContent = ''; }, 4000);
+  } catch (e) {
+    statusEl.textContent = 'Error: ' + e.message;
+  }
+}
+
+var _restoreFile = null;
+
+function handleRestoreFileSelect(e) {
+  _restoreFile = e.target.files[0] || null;
+  var statusEl = document.getElementById('restore-status');
+  statusEl.textContent = '';
+  document.getElementById('restore-confirm').style.display = 'none';
+}
+
+function doRestore() {
+  var statusEl = document.getElementById('restore-status');
+  var policy = document.getElementById('restore-conflict-policy').value;
+
+  if (!_restoreFile) {
+    statusEl.textContent = 'Please select a backup file first.';
+    statusEl.style.color = '#f87171';
+    return;
+  }
+
+  if (policy === 'overwrite') {
+    document.getElementById('restore-confirm').style.display = 'block';
+    return;
+  }
+
+  doRestoreSubmit(policy);
+}
+
+async function confirmRestore() {
+  var inputEl = document.getElementById('restore-confirm-input');
+  if (inputEl.value.trim() !== 'overwrite') {
+    alert('Please type "overwrite" to confirm.');
+    return;
+  }
+  document.getElementById('restore-confirm').style.display = 'none';
+  await doRestoreSubmit('overwrite');
+}
+
+function cancelRestore() {
+  document.getElementById('restore-confirm').style.display = 'none';
+  document.getElementById('restore-confirm-input').value = '';
+}
+
+async function doRestoreSubmit(policy) {
+  var statusEl = document.getElementById('restore-status');
+
+  if (!_restoreFile) {
+    statusEl.textContent = 'No file selected.';
+    statusEl.style.color = '#f87171';
+    return;
+  }
+
+  statusEl.textContent = 'Restoring\u2026';
+  statusEl.style.color = 'var(--text-muted)';
+
+  try {
+    var fileText = await _restoreFile.text();
+    // Validate it's JSON first
+    JSON.parse(fileText);
+
+    var res = await fetch('/import?on_conflict=' + policy, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: fileText,
+    });
+
+    if (!res.ok) {
+      var err = await res.json().catch(function() { return {}; });
+      throw new Error(err.detail || 'Restore failed');
+    }
+
+    var result = await res.json();
+    var parts = [];
+    if (result.entries_imported > 0) parts.push(result.entries_imported + ' entries imported');
+    if (result.entries_skipped > 0) parts.push(result.entries_skipped + ' entries skipped');
+    if (result.entries_overwritten > 0) parts.push(result.entries_overwritten + ' entries overwritten');
+    if (result.tags_created > 0) parts.push(result.tags_created + ' tags created');
+    if (result.checkins_imported > 0) parts.push(result.checkins_imported + ' check-ins imported');
+    if (result.embeddings_imported > 0) parts.push(result.embeddings_imported + ' embeddings imported');
+    if (result.errors && result.errors.length > 0) parts.push(result.errors.length + ' errors');
+
+    statusEl.textContent = 'Done: ' + (parts.join(', ') || 'nothing to restore');
+    statusEl.style.color = '#5bca8e';
+
+    // Clear file input
+    document.getElementById('restore-file').value = '';
+    _restoreFile = null;
+
+    // Refresh timeline if loaded
+    if (timelineData) loadTimeline();
+  } catch (e) {
+    statusEl.textContent = 'Error: ' + e.message;
+    statusEl.style.color = '#f87171';
+  }
+}
+
+// Attach file input listener
+document.getElementById('restore-file').addEventListener('change', handleRestoreFileSelect);
+
+// Fetch and display the active provider in the privacy badge
+async function updateProviderBadge() {
+  const badge = document.getElementById('provider-badge');
+  const dot = document.getElementById('provider-dot');
+  const label = document.getElementById('provider-label');
+  try {
+    const res = await fetch('/provider-info');
+    if (!res.ok) return;
+    const info = await res.json();
+    const transport = info.transport || 'ollama';
+    const model = info.model || '';
+    dot.className = 'provider-dot ' + (transport === 'ollama' ? 'local' : 'cloud');
+    if (transport === 'ollama') {
+      label.textContent = 'Local model';
+    } else {
+      label.textContent = 'Cloud: ' + (model || transport);
+    }
+  } catch (_) {
+    dot.className = 'provider-dot error';
+    label.textContent = 'Model unknown';
+  }
+}
+updateProviderBadge();
 </script>
 </body>
 </html>

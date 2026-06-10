@@ -9,3 +9,6 @@ venv/
 models/
 *.gguf
 *.onnx
+
+# Local secrets — never commit
+data/config.json

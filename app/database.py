@@ -399,8 +399,14 @@ def export_all() -> dict:
             "SELECT week_start, spoons, meltdown_count, shutdown_count, notes, created_at FROM weekly_checkins ORDER BY week_start DESC"
         ).fetchall()
 
+        # Export all tags — both linked to entries and orphaned
+        all_tags = conn.execute(
+            "SELECT id, name, category FROM tags ORDER BY category, name"
+        ).fetchall()
+
         return {
             "entries": entries,
+            "tags": [dict(t) for t in all_tags],
             "weekly_checkins": [dict(wc) for wc in weekly_checkins],
         }
 
@@ -973,6 +979,7 @@ def import_data(
     import json as _json
 
     entries: list[dict] = data.get("entries", [])
+    tags_data: list[dict] = data.get("tags", [])
     weekly_checkins: list[dict] = data.get("weekly_checkins", [])
     entry_embeddings: list[dict] = data.get("entry_embeddings", [])
 
@@ -1123,6 +1130,28 @@ def import_data(
 
             except Exception as exc:
                 stats["errors"].append(f"Error processing entry {entry.get('entry_date', '?')}: {exc}")
+
+        # --- Orphaned tags (from top-level "tags" key, not tied to entries) ---
+        for tag_def in tags_data:
+            try:
+                tag_name = str(tag_def.get("name", "")).strip()
+                tag_cat = str(tag_def.get("category", "")).strip()
+                if not tag_name:
+                    continue
+                existing_tag = conn.execute(
+                    "SELECT id FROM tags WHERE LOWER(name) = LOWER(?) AND LOWER(category) = LOWER(?)",
+                    (tag_name, tag_cat),
+                ).fetchone()
+                if existing_tag:
+                    stats["tags_reused"] += 1
+                else:
+                    conn.execute(
+                        "INSERT INTO tags (name, category) VALUES (?, ?)",
+                        (tag_name, tag_cat),
+                    )
+                    stats["tags_created"] += 1
+            except Exception as exc:
+                stats["errors"].append(f"Error processing tag {tag_def}: {exc}")
 
         # --- Weekly check-ins ---
         for wc in weekly_checkins:

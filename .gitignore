@@ -1,14 +1,28 @@
-*.db
-*.sqlite3
-.env
-*.wav
-*.mp3
-__pycache__/
-.venv/
-venv/
-models/
-*.gguf
-*.onnx
-
-# Local secrets — never commit
+# Secrets & local config
 data/config.json
+.env
+
+# Personal data — never commit (even encrypted)
+data/mood.db
+data/mood.db-wal
+data/mood.db-shm
+data/*.bak*
+data/*.pre-phase*
+data/*.safe*
+data/*.enc*
+data/vault.json
+
+# Models
+kokoro/
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keep committed: data/config.example

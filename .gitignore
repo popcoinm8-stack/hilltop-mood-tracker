@@ -1,8 +1,17 @@
-# Secrets & local config
+# ============================================================
+# Secrets & local config — NEVER commit these
+# ============================================================
 data/config.json
 .env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
 
+# ============================================================
 # Personal data — never commit (even encrypted)
+# ============================================================
 data/mood.db
 data/mood.db-wal
 data/mood.db-shm
@@ -10,19 +19,45 @@ data/*.bak*
 data/*.pre-phase*
 data/*.safe*
 data/*.enc*
+data/*.tmp
 data/vault.json
+app/mood.db
 
-# Models
+# ============================================================
+# ML models — large binaries, download separately
+# ============================================================
 kokoro/
 
+# ============================================================
 # Python
+# ============================================================
 venv/
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
 
-# OS
+# ============================================================
+# IDE / OS
+# ============================================================
 .DS_Store
 Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# ============================================================
+# Misc
+# ============================================================
+*.log
+*.tmp
 
 # Keep committed: data/config.example
+!data/config.example

@@ -569,28 +569,30 @@ def test_connection(cfg: dict) -> dict:
 # Public API — three job functions, all delegating to complete()
 # ---------------------------------------------------------------------------
 
-def generate_draft(notes: str, recent_history: list[dict], mode: str = "quick") -> str:
-    """Generate a reflection for a daily journal entry."""
-    prompt = build_prompt(notes, recent_history, mode)
-    max_tokens = 256 if mode == "quick" else 512
+def generate_draft(notes: str, recent_history: list[dict]) -> str:
+    """Generate a structured reflection for a daily journal entry.
+
+    Always uses the detailed (4-section) prompt — quick mode has been removed
+    because modern LLMs produce better reflections with structure.
+    """
+    prompt = build_prompt(notes, recent_history)
     return complete(
-        QUICK_PROMPT if mode == "quick" else DETAILED_PROMPT,
+        DETAILED_PROMPT,
         prompt,
         job="reflection",
-        max_tokens=max_tokens,
+        max_tokens=512,
     )
 
 
-def generate_draft_from_snapshot(snapshot: dict, notes: str, recent_history: list[dict], mode: str = "quick") -> str:
+def generate_draft_from_snapshot(snapshot: dict, notes: str, recent_history: list[dict]) -> str:
     """Like generate_draft but pins to a config snapshot (for background tasks)."""
-    prompt = build_prompt(notes, recent_history, mode)
-    max_tokens = 256 if mode == "quick" else 512
+    prompt = build_prompt(notes, recent_history)
     return complete_from_snapshot(
         snapshot,
-        QUICK_PROMPT if mode == "quick" else DETAILED_PROMPT,
+        DETAILED_PROMPT,
         prompt,
         job="reflection",
-        max_tokens=max_tokens,
+        max_tokens=512,
     )
 
 
@@ -985,17 +987,6 @@ def generate_clinician_summary_from_snapshot(
 # Prompt templates
 # ---------------------------------------------------------------------------
 
-QUICK_PROMPT = (
-    "You are a reflection aid for a neurodivergent adult. "
-    "Given their daily notes and a short history of recent days, "
-    "write a brief observation of 3-4 sentences. "
-    "It is a draft for them to check, not a verdict. "
-    "No diagnosis. Do not reassure or cheerlead for its own sake. "
-    "Plain, grounded language. "
-    "If you notice a possible pattern - including across recent days - "
-    "raise it as a question, not a conclusion."
-)
-
 DETAILED_PROMPT = (
     "You are a reflection aid for a neurodivergent adult. "
     "Given their daily notes and a short history of recent days, "
@@ -1080,22 +1071,16 @@ def _build_history_block(recent_history: list[dict]) -> str:
     return "\n(No prior entries yet.)\n"
 
 
-def build_prompt(notes: str, recent_history: list[dict], mode: str = "quick") -> str:
-    """Build the user-facing part of the prompt (history + notes + instruction).
+def build_prompt(notes: str, recent_history: list[dict]) -> str:
+    """Build the user-facing part of the prompt (history + notes).
 
-    The system prompt (QUICK_PROMPT / DETAILED_PROMPT) is passed separately
-    as the system message — do NOT include it here to avoid duplication.
+    The system prompt (DETAILED_PROMPT) is passed separately as the
+    system message — do NOT include it here to avoid duplication.
     """
-    instruction = (
-        "Write a 3-4 sentence draft observation."
-        if mode == "quick"
-        else "Write the structured draft reflection."
-    )
     history_block = _build_history_block(recent_history)
     return (
         f"{history_block}"
         f"Today's notes:\n{notes}\n\n"
-        f"{instruction}"
     )
 
 

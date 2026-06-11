@@ -117,13 +117,13 @@ def init_db() -> None:
                 notes TEXT NOT NULL,
                 draft TEXT NOT NULL,
                 kept_summary TEXT,
-                mode TEXT NOT NULL DEFAULT 'quick',
+                mode TEXT NOT NULL DEFAULT 'detailed',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
         columns = {row[1] for row in conn.execute("PRAGMA table_info(entries)")}
         if "mode" not in columns:
-            conn.execute("ALTER TABLE entries ADD COLUMN mode TEXT NOT NULL DEFAULT 'quick'")
+            conn.execute("ALTER TABLE entries ADD COLUMN mode TEXT NOT NULL DEFAULT 'detailed'")
         # Phase 2: signal columns
         if "energy" not in columns:
             conn.execute("ALTER TABLE entries ADD COLUMN energy TEXT")
@@ -200,7 +200,7 @@ def save_entry(
     *,
     transcription: Optional[str] = None,
     kept_summary: Optional[str] = None,
-    mode: str = "quick",
+    mode: str = "detailed",
     energy: Optional[str] = None,
     sleep_quality: Optional[str] = None,
     sensory_load: Optional[str] = None,
@@ -1043,7 +1043,7 @@ def import_data(
                             entry.get("notes", ""),
                             entry.get("transcription"),
                             entry.get("kept_summary"),
-                            entry.get("mode", "quick"),
+                            entry.get("mode", "detailed"),
                             entry.get("energy"),
                             entry.get("sleep_quality"),
                             entry.get("sensory_load"),
@@ -1069,7 +1069,7 @@ def import_data(
                             entry.get("draft", ""),
                             entry.get("transcription"),
                             entry.get("kept_summary"),
-                            entry.get("mode", "quick"),
+                            entry.get("mode", "detailed"),
                             entry.get("energy"),
                             entry.get("sleep_quality"),
                             entry.get("sensory_load"),

@@ -223,43 +223,6 @@ body {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ===== MODE TOGGLE ===== */
-.mode-toggle {
-  display: flex;
-  margin-bottom: 0.75rem;
-  background: var(--bg-inset);
-  padding: 0.175rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-}
-.mode-toggle button {
-  flex: 1;
-  padding: 0.375rem 0.75rem;
-  background: transparent;
-  color: var(--text-muted);
-  border: none;
-  border-radius: calc(var(--radius-md) - 3px);
-  font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-.mode-toggle button:hover { color: var(--text-secondary); }
-.mode-toggle button.active {
-  background: var(--bg-card);
-  color: var(--accent);
-  box-shadow: var(--shadow-sm);
-  font-weight: 600;
-}
-
-/* ===== HINTS ===== */
-.mode-hint {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-bottom: 0.875rem;
-  letter-spacing: 0;
-}
-
 /* ===== TEXTAREA ===== */
 textarea {
   width: 100%;
@@ -1956,11 +1919,6 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
 
   <!-- Journal tab -->
   <div id="tab-journal" class="tab-panel active">
-    <div class="mode-toggle">
-      <button id="mode-quick" class="active" onclick="setMode('quick')">Quick</button>
-      <button id="mode-detailed" onclick="setMode('detailed')">Detailed</button>
-    </div>
-    <div class="mode-hint" id="mode-hint">3-4 sentence draft observation.</div>
     <textarea id="notes" placeholder="What's on your mind today?"></textarea>
 
     <!-- Signals -->
@@ -2646,30 +2604,12 @@ function showTab(name) {
 }
 
 // ============================================================
-// JOURNAL MODE
+// JOURNAL STATE
 // ============================================================
 let currentEntryId = null;
-let currentMode = 'quick';
 let currentSignals = { energy: null, sleep_quality: null, sensory_load: null, overwhelm: null };
 let currentTags = [];  // flat array of {name, category} — auto-populated by AI
 window.lastTranscription = null;  // raw dictation captured before submit
-
-const modeHints = {
-  quick: '3-4 sentence draft observation.',
-  detailed: 'Structured: what happened, how it landed, possible pattern, question to sit with.',
-};
-
-function setMode(mode) {
-  if (mode === currentMode) return;
-  currentMode = mode;
-  document.getElementById('mode-quick').classList.toggle('active', mode === 'quick');
-  document.getElementById('mode-detailed').classList.toggle('active', mode === 'detailed');
-  document.getElementById('mode-hint').textContent = modeHints[mode];
-  currentEntryId = null;
-  clearSignals();
-  currentTags = [];
-  renderTags();
-}
 
 // ============================================================
 // REFLECT & SAVE
@@ -2688,7 +2628,6 @@ async function doReflect() {
       body: JSON.stringify({
         notes,
         transcription: window.lastTranscription || null,
-        mode: currentMode,
         energy: currentSignals.energy,
         sleep_quality: currentSignals.sleep_quality,
         sensory_load: currentSignals.sensory_load,
@@ -3571,7 +3510,7 @@ function renderTimeline(entries) {
     }).join('');
     return '<div class="timeline-entry" onclick="openEntry(\'' + e.entry_date + '\')">' +
       '<div class="entry-date">' + escHtml(e.entry_date) + '</div>' +
-      '<div class="entry-meta">' + escHtml(e.mode) + ' &middot; summary ' + summaryBadge + ' <span class="timeline-signals">' + signalDots + '</span></div>' +
+      '<div class="entry-meta">detailed &middot; summary ' + summaryBadge + ' <span class="timeline-signals">' + signalDots + '</span></div>' +
       '<div class="entry-preview">' + escHtml(e.notes_preview) + '</div></div>';
   }).join('');
 }
@@ -3599,7 +3538,7 @@ async function openEntry(entryDate) {
       }
     } catch (_) {}
 
-    document.getElementById('modal-meta').textContent = entry.mode + ' mode';
+    document.getElementById('modal-meta').textContent = 'reflection';
     let body = '';
 
     // Signals
@@ -4848,7 +4787,6 @@ async function doInteroCheckin() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         notes: 'Interoception check-in: ' + input,
-        mode: 'quick',
       }),
     });
     if (!res.ok) throw new Error('LLM unavailable');
@@ -4888,7 +4826,7 @@ async function openEntry(entryDate) {
       if (tagRes.ok) tags = (await tagRes.json()).tags || [];
     } catch (_) {}
 
-    document.getElementById('modal-meta').textContent = entry.mode + ' mode';
+    document.getElementById('modal-meta').textContent = 'reflection';
     let body = '';
 
     // Signals

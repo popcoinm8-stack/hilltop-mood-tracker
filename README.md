@@ -11,7 +11,7 @@ Your data stays on your disk, encrypted at rest, and only reaches an AI provider
 ## Highlights
 
 - **🔐 Encryption at rest** — SQLite database is encrypted with SQLCipher. Your journal is protected by a passphrase plus a recovery key, so a lost passphrase doesn't mean a lost journal.
-- **🤖 AI reflections, on your terms** — Drafts quick or detailed reflections of your day. Uses local Ollama by default, or any OpenAI-compatible endpoint with your own key. Mid-flight config switches are safe.
+- **🤖 AI reflections, on your terms** — Drafts a structured 4-section reflection of your day. Uses local Ollama by default, or any OpenAI-compatible endpoint with your own key. Mid-flight config switches are safe.
 - **🧠 Ask Your Journal** — Ask natural-language questions across your history ("When do I usually crash on Sundays?") and get answers grounded in your actual entries, with citations.
 - **📊 Tag × Signal correlations** — Computes real statistics (per-tag signal distributions, lead/lag between sleep and overwhelm) and narrates them in plain language. No vibe-based pattern matching.
 - **🩺 Clinician summary (V2)** — Generates a structured handout (Overall Picture, Notable Changes, Meltdowns/Shutdowns, Things to Bring, Timeline, Suggested Questions) you can edit before sharing.
@@ -73,7 +73,7 @@ You can hot-switch between providers in Settings without restarting. Background 
 
 1. **Open the day** — A blank entry for today appears. No friction, no logins.
 2. **Write or dictate** — Type, or use the microphone to dictate via `faster-whisper`.
-3. **Generate a reflection** — The AI drafts a 3–4 sentence observation (quick mode) or a structured 4-section reflection (detailed mode). It's a draft for you to check, not a verdict.
+3. **Generate a reflection** — The AI drafts a structured reflection (what happened, how it landed, possible pattern, question to sit with). It's a draft for you to check, not a verdict.
 4. **Edit, keep, or discard** — The summary you keep is stored separately from your raw notes.
 5. **Tags appear automatically** — The AI generates tags (with open-ended categories) and fills in any signal levels you left blank. Remove tags you don't agree with, or click "Re-suggest tags" for a fresh set.
 6. **Come back later** — Browse timeline, ask questions, see your trends, generate a clinician summary.

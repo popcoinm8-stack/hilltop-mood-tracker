@@ -315,7 +315,6 @@ init_db()
 class ReflectRequest(BaseModel):
     notes: str
     transcription: str | None = None  # raw dictation, stored for detail view
-    mode: str = "quick"  # "quick" or "detailed"
     energy: str | None = None
     sleep_quality: str | None = None
     sensory_load: str | None = None
@@ -324,7 +323,6 @@ class ReflectRequest(BaseModel):
 
 class ReflectResponse(BaseModel):
     entry_id: int
-    mode: str
     autostruct_task_id: str | None = None
 
 
@@ -371,7 +369,6 @@ async def reflect(req: ReflectRequest, background_tasks: BackgroundTasks) -> Ref
     if not req.notes.strip():
         raise HTTPException(status_code=400, detail="Notes cannot be empty.")
 
-    mode = req.mode if req.mode in ("quick", "detailed") else "quick"
     today = date.today()
 
     # Append transcription to notes if provided
@@ -385,7 +382,7 @@ async def reflect(req: ReflectRequest, background_tasks: BackgroundTasks) -> Ref
         notes=notes,
         transcription=req.transcription,
         kept_summary=None,  # filled in by background task
-        mode=mode,
+        mode="detailed",
         energy=req.energy,
         sleep_quality=req.sleep_quality,
         sensory_load=req.sensory_load,
@@ -398,7 +395,7 @@ async def reflect(req: ReflectRequest, background_tasks: BackgroundTasks) -> Ref
 
     # Run model call in background — own DB connection via WAL
     background_tasks.add_task(
-        _run_reflection_task, entry_id, notes, mode, config_snapshot
+        _run_reflection_task, entry_id, notes, config_snapshot
     )
 
     # Also kick off an autostruct task for AI-generated tags
@@ -409,14 +406,14 @@ async def reflect(req: ReflectRequest, background_tasks: BackgroundTasks) -> Ref
         _run_autostruct_and_apply_task, autostruct_task_id, entry_id, notes, config_snapshot, existing_tags
     )
 
-    return ReflectResponse(entry_id=entry_id, mode=mode, autostruct_task_id=autostruct_task_id)
+    return ReflectResponse(entry_id=entry_id, autostruct_task_id=autostruct_task_id)
 
 
-def _run_reflection_task(entry_id: int, notes: str, mode: str, config_snapshot: dict) -> None:
+def _run_reflection_task(entry_id: int, notes: str, config_snapshot: dict) -> None:
     """Background task: generate reflection and update the entry."""
     try:
         recent = get_recent_summaries(days=7)
-        llm_reflection = llm.generate_draft_from_snapshot(config_snapshot, notes, recent, mode=mode)
+        llm_reflection = llm.generate_draft_from_snapshot(config_snapshot, notes, recent)
         update_reflection_status(entry_id, "ready", kept_summary=llm_reflection)
     except llm.LLMError as exc:
         update_reflection_status(entry_id, "error", error_note=str(exc))
@@ -700,16 +697,12 @@ async def stats() -> dict:
     cutoff = date.today() - timedelta(days=180)
     entries_180d = [e for e in entries if e["entry_date"] >= str(cutoff)]
 
-    quick_count = sum(1 for e in entries if e["mode"] == "quick")
-    detailed_count = sum(1 for e in entries if e["mode"] == "detailed")
     kept_count = sum(1 for e in entries if e["kept_summary"])
     avg_pct = round((kept_count / total * 100) if total > 0 else 0)
 
     return {
         "total_entries": total,
         "entries_180d": len(entries_180d),
-        "quick_count": quick_count,
-        "detailed_count": detailed_count,
         "avg_kept_summaries_pct": f"{avg_pct}%",
     }
 

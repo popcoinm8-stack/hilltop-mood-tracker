@@ -1,6 +1,6 @@
 # Mood Tracker — Project Handover
 
-**Last updated:** June 2026 (Phase A + Phase B + Phase C + Phase D + Phase E + Phase F + Phase G)
+**Last updated:** June 2026 (Phase A + Phase B + Phase C + Phase D + Phase E + Phase F + Phase G + Phase H)
 **Stack:** FastAPI + SQLite + vanilla JS (no frontend framework) + Ollama (local LLM, optional) + Yuxor cloud BYOK + Whisper (local STT) + Kokoro (local TTS)
 **Location:** `C:\Users\ExSpo\OneDrive\Desktop\Mood tracker tool\mood-tracker\`
 
@@ -95,7 +95,7 @@ One row per day. `entry_date` is the unique key (one entry per day).
 | `notes` | TEXT | No | User's written text; includes dictation + LLM reflection appended |
 | `draft` | TEXT | No | Legacy column; kept for existing entries |
 | `kept_summary` | TEXT | Yes | The AI-generated reflection (this is the key data for trends/clinician) |
-| `mode` | TEXT | No | `"quick"` or `"detailed"` |
+| `mode` | TEXT | No | Always `"detailed"` (quick mode removed) |
 | `energy` | TEXT | Yes | Signal: `"low"`, `"med"`, or `"high"` |
 | `sleep_quality` | TEXT | Yes | Signal: `"low"`, `"med"`, or `"high"` |
 | `sensory_load` | TEXT | Yes | Signal: `"low"`, `"med"`, or `"high"` |
@@ -220,14 +220,13 @@ Returns active transport and model for the UI privacy badge. **Never returns the
 ---
 
 ### `POST /reflect`
-Saves an entry immediately with `reflection_status='pending'`, then generates the AI reflection in a background task. Returns instantly — the client polls `/reflect-status/{entry_id}` until the reflection is ready.
+Saves an entry immediately with `reflection_status='pending'`, then generates the AI reflection and auto-tags in background tasks. Returns instantly — the client polls `/reflect-status/{entry_id}` until the reflection is ready, and `/autostruct-status/{task_id}` for tags.
 
 **Request body:**
 ```json
 {
   "notes": "string",
   "transcription": "string or null",
-  "mode": "quick | detailed",
   "energy": "low | med | high | null",
   "sleep_quality": "low | med | high | null",
   "sensory_load": "low | med | high | null",
@@ -235,7 +234,9 @@ Saves an entry immediately with `reflection_status='pending'`, then generates th
 }
 ```
 
-**Response:** `{ "entry_id": 42, "mode": "quick", "autostruct_task_id": "uuid-string" }`
+Note: the `mode` field (quick/detailed) has been removed — see Phase H. All entries now use the detailed (4-section) reflection prompt.
+
+**Response:** `{ "entry_id": 42, "autostruct_task_id": "uuid-string" }`
 
 **Behaviour:**
 1. Validates `notes` is non-empty
@@ -304,7 +305,7 @@ Returns all entries with previews and signals.
 [{
   "entry_date": "2026-06-09",
   "notes_preview": "first 100 chars...",
-  "mode": "quick",
+  "mode": "detailed",
   "has_kept_summary": true,
   "signals": { "energy": "med", "sleep_quality": null, ... }
 }]
@@ -410,8 +411,6 @@ Returns aggregate statistics.
 {
   "total_entries": 42,
   "entries_180d": 38,
-  "quick_count": 30,
-  "detailed_count": 12,
   "avg_kept_summaries_pct": "85%"
 }
 ```
@@ -596,7 +595,6 @@ A persistent badge in the bottom-right corner shows whether AI is running locall
 
 ```javascript
 let currentEntryId = null;
-let currentMode = 'quick';                    // 'quick' or 'detailed'
 let currentSignals = {                       // { energy, sleep_quality, sensory_load, overwhelm }
   energy: null, sleep_quality: null,
   sensory_load: null, overwhelm: null
@@ -641,12 +639,9 @@ All three public functions delegate to a single internal `complete(system_prompt
 
 ### `generate_draft()` — daily reflection
 
-Used for `/reflect`. Two modes:
+Used for `/reflect`. Always uses the detailed (4-section) prompt — quick mode was removed in Phase H because modern LLMs produce better reflections with structure.
 
-**Quick prompt (3-4 sentence observation):**
-> You are a reflection aid for a neurodivergent adult. Given their daily notes and a short history of recent days, write a brief observation of 3-4 sentences. It is a draft for them to check, not a verdict. No diagnosis. Do not reassure or cheerlead for its own sake. Plain, grounded language. If you notice a possible pattern — including across recent days — raise it as a question, not a conclusion.
-
-**Detailed prompt (4-section structured reflection):**
+**Prompt (always used):**
 > 1. What happened — 1-2 sentences describing what the notes describe.
 > 2. How it landed — 1-2 sentences on the emotional impact or tone.
 > 3. Possible pattern — If you notice something that connects across recent days, raise it as a question. If nothing connects, just say so briefly.
@@ -786,7 +781,6 @@ Yuxor's `/chat/completions` endpoint returns Server-Sent Events (SSE) by default
 - **No data migration scripts.** The `init_db()` migrations are one-way additive. There's no downgrade path.
 - **LLM prompts are hardcoded strings.** Changing the reflection style requires editing `app/llm.py`.
 - **No backup/restore UI.** The `/export` endpoint provides a manual JSON backup. There's no restore mechanism.
-- **`/reflect` is synchronous.** The LLM call blocks the response. If the model is slow (especially with cloud latency), the UI waits. Phase 2 makes this asynchronous.
 
 ---
 
@@ -846,7 +840,7 @@ Yuxor's `/chat/completions` endpoint returns Server-Sent Events (SSE) by default
 - Imported `BackgroundTasks` from `fastapi`
 - Added `get_entry_status`, `update_reflection_status` to database imports
 - `POST /reflect` now: saves immediately with `reflection_status='pending'`, snapshots config, queues `BackgroundTask`
-- Added `_run_reflection_task(entry_id, notes, mode, config_snapshot)` — the background task function
+- `_run_reflection_task(entry_id, notes, config_snapshot)` — the background task function (always uses detailed prompt)
 - Added `GET /reflect-status/{entry_id}` — returns `{status, kept_summary}`
 
 ### `app/static/index.html`
@@ -862,7 +856,7 @@ Yuxor's `/chat/completions` endpoint returns Server-Sent Events (SSE) by default
 
 1. **Talk it through (Phase F)** — opt-in conversational back-and-forth mode (pending design approval).
 
-2. **Tag analytics v2** — when tags become open-ended, correlation analytics can discover unexpected tag × signal patterns beyond the fixed "activities/triggers" set. Needs a query rewrite to consider all categories.
+2. **Tag analytics v2** — with tags now open-ended, correlation analytics can discover unexpected tag × signal patterns beyond the fixed "activities/triggers" set. Needs a query rewrite to consider all categories.
 
 3. **Spoons tracking integration** — the ND tab spoons value could be shown in the Journal tab's signal row as a quick daily log.
 
@@ -1202,3 +1196,36 @@ Tags used to be limited to four fixed categories (people, places, activities, tr
 - "Re-suggest tags" button (hidden until entry is saved) calls `runAutoStructForEntry()`
 - `saveCurrentTags()` deprecated (tags are now auto-applied by the server)
 - `clearJournalEntry()` resets `currentTags = []` and calls `renderTags()`
+
+---
+
+## Phase H Changelog — Remove Quick Mode
+
+Quick mode produced shorter, less useful reflections. With access to capable LLMs, there's no reason to offer a lower-quality option. All entries now use the detailed (4-section) prompt.
+
+### `app/llm.py`
+- Removed `QUICK_PROMPT` constant
+- Removed `mode` parameter from `generate_draft()` and `generate_draft_from_snapshot()` — both always use `DETAILED_PROMPT` with `max_tokens=512`
+- Removed `mode` parameter from `build_prompt()` — no longer appends "Write a 3-4 sentence draft observation" or "Write the structured draft reflection"
+- `DETAILED_PROMPT` is now the only reflection prompt
+
+### `app/main.py`
+- Removed `mode` field from `ReflectRequest` model — always uses "detailed"
+- Removed `mode` validation line (`mode = req.mode if req.mode in ("quick", "detailed") else "quick"`)
+- `_run_reflection_task()` no longer takes a `mode` parameter
+- `ReflectResponse` no longer includes `mode` field
+- Removed `quick_count` and `detailed_count` from `GET /stats` response
+
+### `app/database.py`
+- Changed default for `mode` column from `"quick"` to `"detailed"` in schema and migration
+- Changed `save_entry()` default from `mode="quick"` to `mode="detailed"`
+- Changed import fallback from `entry.get("mode", "quick")` to `entry.get("mode", "detailed")`
+
+### `app/static/index.html`
+- Removed Quick/Detailed mode toggle (`<div class="mode-toggle">` and its buttons)
+- Removed `.mode-toggle` and `.mode-hint` CSS
+- Removed `currentMode` variable, `modeHints` object, and `setMode()` function
+- Removed `mode: currentMode` from `doReflect()` POST body
+- Removed `mode: 'quick'` from ND check-in POST body
+- Entry detail modal now shows "reflection" instead of "quick mode" / "detailed mode"
+- Timeline entries now show "detailed" label instead of the raw mode value

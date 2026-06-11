@@ -268,6 +268,44 @@ def is_vault_setup() -> bool:
     return VAULT_PATH.exists()
 
 
+def reset_vault_data_files() -> None:
+    """Delete vault.json and the encrypted DB at its recorded path. Idempotent.
+
+    Does not lock the vault or change in-memory state — callers should
+    call lock_vault() first and then install_vault_connection_factory(None)
+    so subsequent DB calls go through sqlite3 against a fresh plaintext file.
+    """
+    # Delete vault.json
+    if VAULT_PATH.exists():
+        VAULT_PATH.unlink()
+
+    # Determine current DB path (may have been migrated) and delete
+    vault_data = load_vault_data()
+    db_path = DB_PATH
+    if vault_data and vault_data.get("db_path_b64"):
+        try:
+            db_path = Path(b64decode(vault_data["db_path_b64"]).decode())
+        except Exception:
+            db_path = DB_PATH
+    if db_path.exists():
+        db_path.unlink()
+
+    # Clean up plaintext backup and any temp files from a previous migration/setup
+    data_dir = DB_PATH.parent
+    for tmp_name in (
+        "mood.db.plaintext.tmp",
+        "mood.db.new.tmp",
+        "mood.db.enc.tmp",
+        "mood.db.plaintext.backup",
+    ):
+        tmp_path = data_dir / tmp_name
+        if tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except Exception:
+                pass
+
+
 # ---------------------------------------------------------------------------
 # Unlock
 # ---------------------------------------------------------------------------
@@ -362,15 +400,18 @@ def change_passphrase(old_passphrase: str, new_passphrase: str) -> dict:
             except Exception:
                 pass  # keep old value
 
-        # Recovery key is stored plain — just re-encrypt with new passphrase+salt
+        # Recovery key handling: the stored value is a scrypt hash (b64(salt):hex).
+        # We encrypt the stored hash with the new AES key so it stays accessible
+        # after passphrase change. The verify function will decrypt and then
+        # compare the user's typed key against the inner hash.
         enc_rk = vault_data.get("encrypted_recovery_key", "")
         new_enc_rk = enc_rk
-        if enc_rk:
+        if enc_rk and ":" in enc_rk:
             try:
                 new_aes_key = crypto.derive_aes_key(new_passphrase, new_salt)[0]
                 new_enc_rk = crypto.encrypt_with_key(new_aes_key, enc_rk)
             except Exception:
-                pass
+                pass  # keep old value
 
         new_vault_data = dict(vault_data)
         new_vault_data["salt"] = b64encode(new_salt).decode()
@@ -387,6 +428,12 @@ def change_passphrase(old_passphrase: str, new_passphrase: str) -> dict:
                 temp_new_encrypted.unlink()
             except Exception:
                 pass
+
+    # Step 6: re-derive in-memory keys with the new passphrase and re-open the DB
+    # so the current session stays unlocked with the new credentials.
+    global _vault
+    _vault.lock()
+    _vault.unlock(new_passphrase)
 
     return {"ok": True}
 

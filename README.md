@@ -16,7 +16,8 @@ Your data stays on your disk, encrypted at rest, and only reaches an AI provider
 - **📊 Tag × Signal correlations** — Computes real statistics (per-tag signal distributions, lead/lag between sleep and overwhelm) and narrates them in plain language. No vibe-based pattern matching.
 - **🩺 Clinician summary (V2)** — Generates a structured handout (Overall Picture, Notable Changes, Meltdowns/Shutdowns, Things to Bring, Timeline, Suggested Questions) you can edit before sharing.
 - **🎙️ Voice in, voice out** — `faster-whisper` speech-to-text for hands-free journaling. `Kokoro` TTS to read reflections back to you.
-- **🏷️ Auto-structuring** — AI suggests signal levels (energy, sleep, sensory load, overwhelm) and tags (people, places, activities, triggers) on every entry. You stay in control of what gets applied.
+- **🏷️ AI-generated tags** — The AI automatically creates tags when you save an entry, using any category that fits (moods, work, health, people, etc.). Tags grow organically from what you write about — no fixed taxonomy. You can remove tags you disagree with or re-run the AI for fresh suggestions.
+- **🛡️ Network mode (optional)** — Host on your PC and access from your phone via home Wi-Fi or Tailscale VPN. HTTPS, access password, device whitelisting, and LAN IP filtering. See [Docs/NETWORK_MODE_HOWTO.md](Docs/NETWORK_MODE_HOWTO.md) for setup instructions.
 - **🗓️ Weekly check-ins** — Track spoons, meltdowns, and shutdowns at a weekly cadence. These flow into trends and clinician summaries.
 - **💾 Backup & restore** — Encrypted export to a single JSON file. Import with conflict-resolution rules. No vendor lock-in.
 - **🛡️ Hardened by default** — Local-only binding (`127.0.0.1`), strict CORS allowlist, CSP and security headers, salted recovery keys, scrypt KDF. See [Security](#security) below.
@@ -50,7 +51,7 @@ pip install -r requirements.txt
 ### 3. Run
 
 ```bash
-python run.py
+.\venv\Scripts\python.exe run.py
 ```
 
 Then open <http://localhost:8000> in your browser.
@@ -74,7 +75,7 @@ You can hot-switch between providers in Settings without restarting. Background 
 2. **Write or dictate** — Type, or use the microphone to dictate via `faster-whisper`.
 3. **Generate a reflection** — The AI drafts a 3–4 sentence observation (quick mode) or a structured 4-section reflection (detailed mode). It's a draft for you to check, not a verdict.
 4. **Edit, keep, or discard** — The summary you keep is stored separately from your raw notes.
-5. **Auto-structured** — Signals (energy, sleep, sensory load, overwhelm) and tags are suggested. Apply, edit, or skip.
+5. **Tags appear automatically** — The AI generates tags (with open-ended categories) and fills in any signal levels you left blank. Remove tags you don't agree with, or click "Re-suggest tags" for a fresh set.
 6. **Come back later** — Browse timeline, ask questions, see your trends, generate a clinician summary.
 
 ---
@@ -89,6 +90,9 @@ mood-tracker/
 │   ├── database.py        # SQLite schema, migrations, queries
 │   ├── vault.py           # SQLCipher encryption manager
 │   ├── crypto.py          # scrypt KDF + AES-128-GCM
+│   ├── auth.py            # Network-mode access password + device whitelisting
+│   ├── tls.py             # Self-signed cert generation for HTTPS
+│   ├── ratelimit.py       # In-memory rate limiting
 │   ├── transcribe.py      # faster-whisper STT singleton
 │   ├── tts.py             # Kokoro TTS singleton
 │   └── static/index.html  # Complete frontend SPA (vanilla JS)
@@ -96,8 +100,12 @@ mood-tracker/
 │   ├── config.example     # Template for config.json
 │   ├── config.json        # Your local config (gitignored, holds API key)
 │   ├── mood.db            # Your encrypted journal (gitignored)
-│   └── vault.json         # Your vault metadata (gitignored)
-├── Docs/                  # Design notes and handover documents
+│   ├── vault.json         # Your vault metadata (gitignored)
+│   ├── auth.json          # Network access password (gitignored, network mode)
+│   ├── devices.json       # Approved devices (gitignored, network mode)
+│   └── tls/               # Self-signed cert (gitignored, network mode)
+├── Docs/
+│   └── NETWORK_MODE_HOWTO.md  # Setup guide for LAN/Tailscale access
 ├── run.py                 # uvicorn entry point with graceful shutdown
 ├── requirements.txt
 ├── HANDOVER.md            # Comprehensive developer doc (architecture, endpoints, schema)
@@ -115,10 +123,16 @@ A few representative endpoints (see `HANDOVER.md` for the full list):
 
 | Endpoint                  | Purpose                                                      |
 | ------------------------- | ------------------------------------------------------------ |
-| `POST /reflect`           | Generate an AI reflection for an entry (background task)     |
+| `POST /reflect`           | Generate an AI reflection for an entry (background task); also auto-generates tags |
 | `POST /save-summary`      | Persist the kept summary for an entry                        |
 | `POST /transcribe`        | Speech-to-text via faster-whisper                            |
 | `POST /speak`             | TTS via Kokoro                                               |
+| `POST /autostruct`        | Suggest tags and signals from entry text (async)             |
+| `POST /autostruct-rerun/{id}` | Re-run autostruct for an existing entry (async)          |
+| `GET /autostruct-status/{id}` | Poll autostruct task result                                |
+| `GET /tags`               | List all tags                                                |
+| `GET /tags/categories`    | List all tag categories in use                                |
+| `POST /entry-tags`        | Save tags for an entry (creates missing tags)                |
 | `POST /analyze-trends`    | Identify trends, patterns, and insights across kept entries  |
 | `POST /ask-journal`       | Answer a natural-language question over the journal          |
 | `POST /correlations`      | Computed tag × signal statistics with plain-language narrative |
@@ -131,15 +145,37 @@ A few representative endpoints (see `HANDOVER.md` for the full list):
 
 ## Security
 
-- **Local-only network binding** — `run.py` binds to `127.0.0.1` only. The app is not exposed to your LAN or the internet.
-- **CORS allowlist** — Only loopback origins are accepted.
+- **Local-only network binding** — `run.py` binds to `127.0.0.1` by default. Use `--network` for LAN/Tailscale access with HTTPS, auth, and device whitelisting.
+- **CORS allowlist** — Only loopback origins accepted in local mode; LAN + Tailscale origins in network mode.
 - **Security headers** — `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, and a strict `Content-Security-Policy` are set on every response.
 - **Encryption at rest** — The SQLite database is encrypted with SQLCipher using a key derived from your passphrase via scrypt (`N=2^14, r=8, p=1, dklen=32`).
 - **API key handling** — Your AI provider key is stored in `data/config.json`, which is gitignored. It never crosses to the browser, never appears in logs, and is replaced with a sentinel in any UI response.
 - **Recovery key** — A separate 24-character token, salted with the vault salt, hashed with scrypt, and stored in `vault.json`. Allows vault recovery if you forget the passphrase. Never stored in plaintext.
 - **No telemetry** — The app makes no outbound calls except the ones you configure in Settings.
 
-If you want to expose this app beyond your own machine, put it behind a reverse proxy that adds authentication. Don't widen the CORS allowlist.
+If you want to expose this app beyond your own machine, use the built-in network mode (see below). Don't widen the CORS allowlist manually.
+
+---
+
+## Network mode (LAN and Tailscale access)
+
+By default the app runs on `http://localhost:8000` only. To access it from your phone or another device:
+
+```
+.\venv\Scripts\python.exe run.py --network
+```
+
+This starts the server in network mode with:
+
+- **HTTPS** via a self-signed certificate (auto-generated, regenerate by deleting `data/tls/`)
+- **Access password** separate from your vault passphrase
+- **Device whitelisting** — phone devices must be approved from the desktop
+- **LAN IP filter** — only RFC 1918 (10.x, 172.16-31.x, 192.168.x), Tailscale (100.64-127.x), and loopback connections accepted
+- **Rate limiting** — 5 login attempts per minute per IP
+
+For remote access from outside your home network, install [Tailscale](https://tailscale.com) on both devices. The server is automatically reachable at your Tailscale IP (e.g. `https://100.x.x.x:8000`) without any router changes.
+
+See [Docs/NETWORK_MODE_HOWTO.md](Docs/NETWORK_MODE_HOWTO.md) for the complete guide.
 
 ---
 
@@ -160,7 +196,7 @@ If you want to expose this app beyond your own machine, put it behind a reverse 
 pip install -r requirements.txt
 
 # Run with the included launcher
-python run.py
+.\venv\Scripts\python.exe run.py
 
 # Or run uvicorn directly if you want hot-reload
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000

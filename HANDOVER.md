@@ -1,6 +1,6 @@
 # Mood Tracker — Project Handover
 
-**Last updated:** June 2026 (Phase A + Phase B + Phase C + Phase D + Phase E)
+**Last updated:** June 2026 (Phase A + Phase B + Phase C + Phase D + Phase E + Phase F + Phase G)
 **Stack:** FastAPI + SQLite + vanilla JS (no frontend framework) + Ollama (local LLM, optional) + Yuxor cloud BYOK + Whisper (local STT) + Kokoro (local TTS)
 **Location:** `C:\Users\ExSpo\OneDrive\Desktop\Mood tracker tool\mood-tracker\`
 
@@ -110,8 +110,8 @@ One row per day. `entry_date` is the unique key (one entry per day).
 | Column | Type | Nullable | Description |
 |--------|------|----------|-------------|
 | `id` | INTEGER | No | Primary key |
-| `name` | TEXT | No | Tag name, UNIQUE |
-| `category` | TEXT | No | One of: `"people"`, `"places"`, `"activities"`, `"triggers"` |
+| `name` | TEXT | No | Tag name, UNIQUE within category (case-insensitive) |
+| `category` | TEXT | No | Any short lowercase string (e.g. `"mood"`, `"work"`, `"people"`, `"self_care"`). Not limited to a fixed set — the AI creates categories dynamically. |
 
 ### Table: `entry_tags`
 
@@ -235,10 +235,7 @@ Saves an entry immediately with `reflection_status='pending'`, then generates th
 }
 ```
 
-**Response:**
-```json
-{ "entry_id": 42, "mode": "quick" }
-```
+**Response:** `{ "entry_id": 42, "mode": "quick", "autostruct_task_id": "uuid-string" }`
 
 **Behaviour:**
 1. Validates `notes` is non-empty
@@ -246,8 +243,9 @@ Saves an entry immediately with `reflection_status='pending'`, then generates th
 3. Saves to DB with `kept_summary=NULL`, `reflection_status='pending'`
 4. Snapshots the active provider config (so a mid-flight switch doesn't affect this job)
 5. Queues a FastAPI `BackgroundTask` that calls `generate_draft_from_snapshot()`
-6. On completion: updates `kept_summary` and sets `reflection_status='ready'`
-7. On error: sets `reflection_status='error'` with a note
+6. **Also queues an autostruct background task** that auto-generates tags and signals for the entry
+7. On completion: updates `kept_summary` and sets `reflection_status='ready'`
+8. On error: sets `reflection_status='error'` with a note
 
 **Frontend:** After calling `/reflect`, the client polls `/reflect-status/{entry_id}` every 1.5 seconds (up to 2 minutes) until `status` is `ready` or `error`.
 
@@ -330,19 +328,20 @@ Prefix-search for tags by name.
 ---
 
 ### `POST /entry-tags`
-Creates or replaces all tags for an entry.
+Creates or replaces all tags for an entry. Tags that don't exist in the `tags` table are auto-created. Categories are open-ended — any short lowercase string works.
 
 **Request body:**
 ```json
 {
   "entry_id": 42,
   "tags": [
-    { "name": "Alice", "category": "people" },
-    { "name": "Home", "category": "places" }
+    { "name": "stressed", "category": "mood" },
+    { "name": "deadlines", "category": "work" },
+    { "name": "Alice", "category": "people" }
   ]
 }
 ```
-Tags that don't exist in `tags` table are auto-created. Returns `{ "tags": [...] }`.
+Returns `{ "tags": [...] }`.
 
 ---
 
@@ -420,9 +419,16 @@ Returns aggregate statistics.
 ---
 
 ### `POST /autostruct`
-Suggest tags and signal levels from a journal entry text. Async — returns immediately with a task ID.
+Suggest tags and signal levels from a journal entry text. Async — returns immediately with a task ID. The LLM can invent any tag category it thinks fits (mood, work, health, self_care, relationships, finances, etc.) — not limited to the legacy four.
 
 **Request body:** `{ "entry_text": "string" }`
+
+**Response:** `{ "task_id": "uuid-string" }`
+
+---
+
+### `POST /autostruct-rerun/{entry_id}`
+Re-run autostruct for an existing entry. Use when the user clicks the "Re-suggest tags" button on a saved entry. Generates new tags, replaces the entry's tag list, fills in any missing signal values, and returns a task ID to poll.
 
 **Response:** `{ "task_id": "uuid-string" }`
 
@@ -431,9 +437,18 @@ Suggest tags and signal levels from a journal entry text. Async — returns imme
 ### `GET /autostruct-status/{task_id}`
 Poll the result of an auto-struct task.
 
-**Response (ready):** `{ "status": "ready", "result": { "signals": {...}, "tags": {...} } }`
+**Response (ready):** `{ "status": "ready", "result": { "signals": {...}, "tags": {...} }, "entry_id": 42, "applied": true }`
 **Response (pending):** `{ "status": "pending" }`
 **Response (error):** `{ "status": "error", "error": "..." }`
+
+`tags` is a flat dict of category → [tag, tag, ...] — categories are open-ended, the model creates them dynamically.
+
+---
+
+### `GET /tags/categories`
+Return all distinct tag categories currently in the database.
+
+**Response:** `["mood", "people", "self_care", "work", ...]`
 
 ---
 
@@ -586,9 +601,7 @@ let currentSignals = {                       // { energy, sleep_quality, sensory
   energy: null, sleep_quality: null,
   sensory_load: null, overwhelm: null
 };
-let currentTags = {                          // keyed by category
-  people: [], places: [], activities: [], triggers: []
-};
+let currentTags = [];                       // flat array of {name, category} — auto-populated by AI
 window.lastTranscription = null;             // raw dictation captured before submit
 let timelineData = null;                     // client-side cache for timeline
 ```
@@ -598,10 +611,13 @@ let timelineData = null;                     // client-side cache for timeline
 | Function | Location | Purpose |
 |----------|----------|---------|
 | `showTab(name)` | ~1390 | Switch active tab, trigger load functions |
-| `doReflect()` | ~1770 | Submit entry; poll `/reflect-status` until ready |
+| `doReflect()` | ~1770 | Submit entry; polls `/reflect-status`; triggers autostruct for AI tags |
 | `setSignal(btn)` | ~1845 | Toggle Low/Med/High on a signal; updates UI and state |
-| `addTag()` / `removeTag()` / `renderTagChips()` | ~1895 | Tag chip management |
-| `handleTagInput()` | ~1915 | Autocomplete from server as user types |
+| `renderTags()` | ~2980 | Render auto-generated tags grouped by category |
+| `removeTagFromEntry(cat, name)` | ~3000 | Remove a tag from entry, POST updated list to server |
+| `runAutoStruct()` | ~2830 | Re-run AI tag suggestion on demand |
+| `runAutoStructForEntry(id)` | ~2870 | Re-run autostruct for an existing entry (timeline detail) |
+| `pollAutoStruct(taskId)` | ~2910 | Poll `/autostruct-status` until ready, then refresh tag display |
 | `openEntry(date)` | ~3130 | Open detail modal; shows pending/error/ready reflection state |
 | `saveWorkingNotes(entryId)` | ~3185 | Save working notes from modal |
 | `initNDTab()` | ~2975 | Load current week's checkin, load 12-week history |
@@ -674,7 +690,7 @@ python -m venv venv
 # pip install -r requirements.txt   # if needed
 
 # First run: server starts with whatever transport is in data/config.json
-python run.py
+.\venv\Scripts\python.exe run.py
 ```
 
 Open http://localhost:8000 in your browser.
@@ -698,7 +714,7 @@ Edit `data/config.json` (gitignored):
 
 ### Switching transport
 
-Change `transport` in `data/config.json` and restart `python run.py`.
+Change `transport` in `data/config.json` and restart `.\venv\Scripts\python.exe run.py`.
 
 ### TTS voice
 
@@ -713,6 +729,25 @@ Edit `app/transcribe.py`:
 ```python
 model = WhisperModel("large-v3-turbo", ...)  # change model name
 ```
+
+### Network mode (LAN / Tailscale access)
+
+By default the app binds to `127.0.0.1` and is only reachable on the local machine. To expose it to other devices on your network:
+
+```bash
+.\venv\Scripts\python.exe run.py --network
+```
+
+This starts the server in network mode with:
+- HTTPS via an auto-generated self-signed cert (`data/tls/`)
+- Access password (set during first-time setup via the UI)
+- Device whitelisting (approve phone devices from the desktop Settings panel)
+- LAN IP filter (RFC 1918 + Tailscale `100.64.0.0/10`, no public internet)
+- Rate limiting (5 login attempts/min/IP)
+
+To access from outside your home network, install [Tailscale](https://tailscale.com) on both devices. The server automatically detects the Tailscale IP and includes it in the SAN list of the cert. No router changes required.
+
+See [Docs/NETWORK_MODE_HOWTO.md](Docs/NETWORK_MODE_HOWTO.md) for the full guide.
 
 ---
 
@@ -825,27 +860,17 @@ Yuxor's `/chat/completions` endpoint returns Server-Sent Events (SSE) by default
 
 ## Future Improvements (Not Yet Implemented)
 
-1. **SQLCipher encryption** — encrypt the SQLite database using a PIN-derived key, so the raw `.db` file is unreadable without the PIN. Requires `pysqlcipher3`. (See Phase 3.)
+1. **Talk it through (Phase F)** — opt-in conversational back-and-forth mode (pending design approval).
 
-2. **Talk it through (Phase F)** — opt-in conversational back-and-forth mode (pending design approval).
+2. **Tag analytics v2** — when tags become open-ended, correlation analytics can discover unexpected tag × signal patterns beyond the fixed "activities/triggers" set. Needs a query rewrite to consider all categories.
 
-2. **Background LLM generation** — after save, generate the reflection asynchronously so the user doesn't wait. Store it in the entry when ready. (Phase 2.)
+3. **Spoons tracking integration** — the ND tab spoons value could be shown in the Journal tab's signal row as a quick daily log.
 
-3. **Tag analytics** — in Trends, correlate specific tags with signal patterns (e.g., "entries tagged 'work' tend to have low energy").
+4. **Reminder notifications** — browser notifications to prompt daily journaling at a set time.
 
-4. **Spoons tracking integration** — the ND tab spoons value could be shown in the Journal tab's signal row as a quick daily log.
+5. **Entry editing** — allow editing the notes of a past entry (currently only working notes and kept_summary are editable).
 
-5. **Reminder notifications** — browser notifications to prompt daily journaling at a set time.
-
-6. **Print stylesheet** — dedicated `@media print` rules for the clinician export print view.
-
-7. **Data import** — restore from a JSON backup via `/import` endpoint.
-
-8. **Entry editing** — allow editing the notes of a past entry (currently only working notes and kept_summary are editable).
-
-9. **Trend charts** — SVG-based signal line charts in the Trends tab showing energy/sleep/sensory/overwhelm over time.
-
-10. **Offline PWA** — service worker so the app works without internet (even though cloud model requires internet).
+6. **Offline PWA** — service worker so the app works without internet (even though cloud model requires internet).
 
 ---
 
@@ -853,7 +878,7 @@ Yuxor's `/chat/completions` endpoint returns Server-Sent Events (SSE) by default
 
 ```bash
 # Start the app
-python run.py
+.\venv\Scripts\python.exe run.py
 
 # Ollama must be running (local mode only)
 ollama serve
@@ -902,11 +927,14 @@ curl -X POST http://localhost:8000/settings \
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `run.py` | 89 | Uvicorn runner with signal handlers and graceful shutdown |
-| `app/main.py` | ~860 | FastAPI app, all HTTP endpoints, async reflect, autostruct, ask-journal, correlations, clinician V2 |
-| `app/database.py` | ~785 | SQLite schema, migrations, all query functions, embeddings + Q&A retrieval + correlations + checkins |
-| `app/llm.py` | ~1438 | Pluggable model provider, hot-switch, autostruct, embeddings, Q&A, correlation narration, clinician V2 |
-| `app/static/index.html` | ~5060 | Complete frontend SPA (CSS + HTML + JS), charts, Ask panel, correlations, clinician print view, print stylesheet |
+| `run.py` | ~170 | Uvicorn runner with argparse (`--network`, `--port`, `--bind`), TLS, graceful shutdown |
+| `app/main.py` | ~970 | FastAPI app, all HTTP endpoints, async reflect, autostruct, ask-journal, correlations, clinician V2, auth, network mode middleware |
+| `app/database.py` | ~830 | SQLite schema, migrations, all query functions, embeddings + Q&A retrieval + correlations + checkins + open-ended tags |
+| `app/llm.py` | ~1060 | Pluggable model provider, hot-switch, autostruct (open-ended categories), embeddings, Q&A, correlation narration, clinician V2 |
+| `app/auth.py` | ~310 | Network mode: access password (scrypt), session tokens (HMAC-SHA256), device management (approve/deny/revoke) |
+| `app/tls.py` | ~80 | Self-signed cert generation (RSA 2048, SAN includes all local IPs + Tailscale) |
+| `app/ratelimit.py` | ~50 | In-memory sliding window rate limiting for /auth/login |
+| `app/static/index.html` | ~5000 | Complete frontend SPA (CSS + HTML + JS), auth overlay, AI tag display, charts, Ask panel, clinician print view |
 | `requirements.txt` | 3 | fastapi, uvicorn[standard], httpx |
 | `data/config.json` | — | Secrets (gitignored): transport, key, model, overrides, ollama_base_url |
 | `data/config.example` | — | Config template (committed): default = openai_compatible |
@@ -1086,3 +1114,91 @@ Third-party dependencies not in requirements.txt (installed separately or vendor
 ### `data/mood.db.plaintext.backup`
 - Created automatically by `vault-setup` before encrypting the DB
 - Kept indefinitely as a safety net; never auto-deleted
+
+---
+
+## Phase F Changelog — Network Mode (LAN & Tailscale Access)
+
+### `app/auth.py` (new)
+- Access password: scrypt-hashed (same params as vault), stored in `data/auth.json`
+- Session tokens: HMAC-SHA256 signed, 24-hour TTL, transparent renewal via `X-Renewed-Session` header
+- Device management: records in `data/devices.json` with id, name, IP, user_agent, status (pending/approved/denied/revoked)
+- `is_lan_ip()` — accepts RFC 1918 (10.x, 172.16-31.x, 192.168.x), loopback (127.x), and Tailscale (100.64.0.0/10)
+- Rate limiting: 5 req/min/IP for `/auth/login`
+
+### `app/tls.py` (new)
+- Self-signed cert generation: RSA 2048, CN=mood-tracker.local, SAN includes all detected local IPs + localhost + Tailscale IPs
+- 825-day validity (Chrome max for self-signed)
+- Certs stored in `data/tls/cert.pem` and `data/tls/key.pem`
+
+### `app/ratelimit.py` (new)
+- In-memory sliding window rate limiter
+- `/auth/login`: 5 req/60s per IP
+- All other endpoints: 60 req/60s per IP
+- Periodic purge of stale entries
+
+### `app/main.py`
+- Network mode activated by env var `MT_NETWORK_MODE=1` (set by `run.py --network`)
+- LAN/Tailscale IP filter middleware: rejects non-RFC1918/non-Tailscale IPs in network mode
+- Auth gate middleware: requires session token for all non-public paths in network mode
+- CSRF check: requires `X-Requested-With: mood-tracker-app` on POST/PUT/DELETE
+- CORS: regex allowing `https://` + RFC 1918 origins + Tailscale IPs + `*.ts.net` in network mode
+- CSP: adds `upgrade-insecure-requests` and `block-all-mixed-content` in network mode; HSTS header
+- New endpoints: `/auth/status`, `/auth/login`, `/auth/approve`, `/auth/deny`, `/auth/revoke`, `/auth/devices`, `/auth/logout`, `/auth/change-password`, `/auth/enable`, `/auth/disable`
+- `authFetch()` wrapper in frontend: adds `Authorization: Bearer <token>` and `X-Requested-With` to every fetch call
+
+### `app/static/index.html`
+- Auth overlay: login form (password + device name), pending-approval screen, denied screen
+- Network Access section in Settings: enable/disable, device list with approve/deny/revoke, change password
+- Mobile-responsive CSS: media queries for ≤640px and ≤380px
+- `initAuthUI()` runs before `initVaultUI()`
+
+### `run.py`
+- Argparse: `--network` flag, `--port`, `--bind`
+- On `--network`: generates TLS cert, binds to `0.0.0.0`, prints access URLs
+- Injects `MT_NETWORK_MODE=1` env var
+
+### `.gitignore`
+- Added `data/auth.json`, `data/devices.json`, `data/tls/`
+
+---
+
+## Phase G Changelog — AI-Generated Tags (Open-Ended Categories)
+
+### What changed
+
+Tags used to be limited to four fixed categories (people, places, activities, triggers) with manual input. Now the AI generates tags automatically when you save an entry, using whatever categories fit your writing (mood, work, health, self_care, finances, relationships, etc.). New categories are created on the fly. The manual tag input boxes are removed; tags appear automatically after saving.
+
+### `app/llm.py`
+- Rewrote `AUTOSTRUCT_SYSTEM_PROMPT` — tags are now open-ended, any category the model thinks fits
+- Rewrote `suggest_autostruct()` and `suggest_autostruct_from_snapshot()` — hint block lists all existing tags grouped by their actual categories (not just the legacy four)
+- Rewrote `_parse_autostruct()` — validates signals strictly, but accepts any category name for tags; normalizes to lowercase, dedupes, rejects categories longer than 32 chars or containing spaces
+- `_empty_autostruct()` returns `"tags": {}` instead of the old four empty categories
+- `max_tokens` for autostruct increased from 384 to 512
+
+### `app/database.py`
+- Added `get_all_categories()` — returns distinct tag categories in use
+- `tags.category` column: no longer restricted to four values; accepts any short lowercase string
+- `get_or_create_tag()` already handled arbitrary categories (case-insensitive match on name+category)
+
+### `app/main.py`
+- `POST /reflect` now also queues an autostruct background task; returns `autostruct_task_id` in response
+- Added `_run_autostruct_and_apply_task()` — runs autostruct, creates missing tags via `get_or_create_tag()`, saves them to the entry via `save_entry_tags()`, fills in any missing signals via `update_entry_signals()`
+- Added `POST /autostruct-rerun/{entry_id}` — re-run autostruct for an existing entry
+- Added `GET /tags/categories` — returns distinct categories in use
+- `GET /autostruct-status/{task_id}` response now includes `entry_id` and `applied` fields
+- `ReflectResponse` model now includes `autostruct_task_id: str | None = None`
+
+### `app/static/index.html`
+- **Removed:** four manual tag input areas (people/places/activities/triggers), "Suggest tags & signals" button, autostruct suggestion panel, `TAG_CATEGORIES` constant, `addTagFromInput()`, `handleTagInput()`, `handleTagKeydown()`, `closeAllSuggestions()`, old `currentTags` dict structure
+- **Removed:** CSS for `.tags-category-label`, `.autostruct-tag-row`, `.autostruct-tag-label`, `.autostruct-suggested-chip`, `.autostruct-apply-hint`, `.autostruct-dismiss`, `.autostruct-error`
+- **Added:** `renderTags()` — renders tags grouped by category with removable × chips
+- **Added:** `removeTagFromEntry()` — removes a tag and saves updated list to server
+- **Added:** `runAutoStructForEntry(entryId)` — re-runs autostruct for a timeline entry
+- **Added:** `pollAutoStruct(taskId)` — polls autostruct result, auto-fills tags and signals, renders
+- **Added:** `setSignalByName()` — programmatically set a signal button (used when AI suggests signals)
+- `currentTags` changed from `{people: [], ...}` to flat `[{name, category}]` array
+- `doReflect()` now calls `pollAutoStruct()` after saving, shows "Generating tags…" spinner
+- "Re-suggest tags" button (hidden until entry is saved) calls `runAutoStructForEntry()`
+- `saveCurrentTags()` deprecated (tags are now auto-applied by the server)
+- `clearJournalEntry()` resets `currentTags = []` and calls `renderTags()`

@@ -1,4 +1,5 @@
 """FastAPI application for mood tracker."""
+import os
 from contextlib import asynccontextmanager
 from datetime import date
 from pathlib import Path
@@ -19,6 +20,7 @@ from app.database import (
     get_180day_summaries,
     get_all_entries,
     get_all_tags,
+    get_all_categories,
     get_entries_in_range,
     get_entry_status,
     get_entry_tags,
@@ -57,6 +59,32 @@ _autostruct_tasks: dict[str, dict] = {}
 # ---------------------------------------------------------------------------
 _ask_tasks: dict[str, dict] = {}
 
+# ---------------------------------------------------------------------------
+# Network mode flag. Set to True by run.py when the server is launched with
+# --network. In network mode the server binds to 0.0.0.0, serves HTTPS, and
+# requires an access password + device approval. In local mode (default), the
+# flag stays False and the app behaves exactly as before.
+# ---------------------------------------------------------------------------
+_NETWORK_MODE: bool = os.environ.get("MT_NETWORK_MODE") == "1"
+
+# Paths that are accessible without an auth token (auth status/login are
+# public so the SPA can render the login screen; vault endpoints are public
+# so the user can unlock the vault from a phone).
+PUBLIC_PATHS = {
+    "/",
+    "/auth/status",
+    "/auth/login",
+    "/auth/enable",  # only callable from loopback; not auth-gated
+    "/auth/disable",  # only callable from loopback; not auth-gated
+    "/vault-status",
+    "/vault-setup",
+    "/vault-unlock",
+    "/vault-recovery-unlock",
+    "/vault-reset",
+    "/vault-change-passphrase",
+    "/healthz",
+}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -84,30 +112,147 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+
+def _client_ip(request: Request) -> str:
+    """Return the client's IP address, handling direct connections only.
+
+    We do NOT trust X-Forwarded-For because we don't sit behind a reverse
+    proxy in this deployment. If you add one, update this function.
+    """
+    return request.client.host if request.client else ""
+
+
 # ---------------------------------------------------------------------------
-# CORS: local-only. The app binds to 127.0.0.1 in run.py and is intended to
-# run as a desktop service on the user's own machine. We allow only same-
-# origin (the embedded SPA) and explicit loopback origins. If you need to
-# expose this to a network, put it behind a reverse proxy that adds auth
-# — don't widen this allowlist.
+# LAN IP filter: only active in network mode. Rejects requests from
+# non-private IP ranges, preventing accidental exposure to the internet.
+# Always allows loopback so the desktop UI keeps working.
 # ---------------------------------------------------------------------------
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "http://localhost",
-        "http://127.0.0.1",
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-    max_age=3600,
-)
+@app.middleware("http")
+async def lan_ip_filter(request, call_next):
+    if not _NETWORK_MODE:
+        return await call_next(request)
+    client = _client_ip(request)
+    if client in ("127.0.0.1", "::1", "localhost"):
+        return await call_next(request)
+    # Lazy import to avoid loading auth module costs on local-only runs.
+    from app import auth
+    if not auth.is_lan_ip(client):
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "Access denied: not a LAN address."},
+        )
+    return await call_next(request)
+
+
+# ---------------------------------------------------------------------------
+# CORS: local mode allows http://localhost; network mode allows https://<LAN IP>.
+# ---------------------------------------------------------------------------
+if _NETWORK_MODE:
+    # Regex matches https://localhost, https://127.0.0.1, https://<RFC 1918 IP>,
+    # https://<Tailscale 100.x.x.x>, and https://<Tailscale MagicDNS hostnames>.
+    # Reject http:// origins in network mode — TLS is mandatory.
+    import re
+    _lan_origin_regex = (
+        r"^https://("
+        r"localhost|127\.0\.0\.1"
+        r"|10\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+        r"|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}"
+        r"|192\.168\.\d{1,3}\.\d{1,3}"
+        r"|100\.(6[4-9]|[7-9]\d|1[0-1]\d|12[0-7])\.\d{1,3}\.\d{1,3}"  # Tailscale CGNAT
+        r"|[\w-]+\.[\w-]+\.ts\.net"  # Tailscale MagicDNS hostnames (e.g. machine.tail12345.ts.net)
+        r")(:\d+)?$"
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=_lan_origin_regex,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+        max_age=3600,
+    )
+else:
+    # Local mode: allow http://localhost. Same as before.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "http://localhost",
+            "http://127.0.0.1",
+        ],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+        max_age=3600,
+    )
 
 # Mount static files (index.html lives in app/static/)
 BASE_DIR = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
+# ---------------------------------------------------------------------------
+# Auth gate: only active in network mode AND when auth is enabled.
+# Public paths (login, vault, healthz) are always allowed through.
+# Other paths require a valid session token. CSRF: state-changing requests
+# must include X-Requested-With: mood-tracker-app.
+# ---------------------------------------------------------------------------
+def _extract_bearer_token(request: Request) -> str:
+    """Extract a Bearer token from the Authorization header."""
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return auth_header[7:].strip()
+    return ""
+
+
+@app.middleware("http")
+async def auth_middleware(request, call_next):
+    # Skip entirely in local mode.
+    if not _NETWORK_MODE:
+        return await call_next(request)
+
+    from app import auth
+
+    # Allow all static files, root page, vault endpoints, and explicit public paths.
+    path = request.url.path
+    if path.startswith("/static/") or path == "/" or path.startswith("/vault"):
+        return await call_next(request)
+    if path in PUBLIC_PATHS:
+        return await call_next(request)
+
+    # If auth isn't enabled yet (first-run on localhost), allow the request.
+    # The SPA will call /auth/enable from loopback to set the access password.
+    if not auth.is_auth_enabled():
+        return await call_next(request)
+
+    # CSRF: state-changing requests must include the X-Requested-With header.
+    if request.method in ("POST", "PUT", "DELETE"):
+        if request.headers.get("x-requested-with") != "mood-tracker-app":
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "Missing CSRF header. Set X-Requested-With: mood-tracker-app."},
+            )
+
+    # Validate session token.
+    token = _extract_bearer_token(request)
+    payload = auth.validate_session_token(token) if token else None
+    if payload is None:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Authentication required.", "auth_required": True},
+        )
+
+    # Attach device info to the request for handlers that need it.
+    request.state.device_id = payload["sub"]
+    request.state.device_name = payload["name"]
+
+    response = await call_next(request)
+
+    # Issue a renewed token in the response header.
+    new_token = auth.issue_session_token(payload["sub"], payload["name"])
+    response.headers["X-Renewed-Session"] = new_token
+
+    return response
+
 
 # ---------------------------------------------------------------------------
 # Vault-lock middleware: return 401 if vault is set up but locked
@@ -115,8 +260,10 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 @app.middleware("http")
 async def vault_lock_middleware(request, call_next):
     from app import vault as _v
-    # Allow: vault endpoints (unlock/setup), static files, root page (index.html serves the lock screen)
-    if request.url.path.startswith("/vault") or request.url.path.startswith("/static") or request.url.path == "/":
+    # Allow: vault endpoints (unlock/setup), auth endpoints, static files, root page, healthz
+    path = request.url.path
+    if (path.startswith("/vault") or path.startswith("/auth") or
+        path.startswith("/static") or path == "/" or path == "/healthz"):
         return await call_next(request)
     # Block API calls if the vault is set up but locked (not unlocked in memory)
     if _v.is_vault_setup() and not _v._vault.is_unlocked():
@@ -136,12 +283,21 @@ async def security_headers_middleware(request, call_next):
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "DENY")
     response.headers.setdefault("Referrer-Policy", "no-referrer")
-    response.headers.setdefault(
-        "Content-Security-Policy",
+    csp = (
         "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; "
-        "object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+        "object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
     )
+    if _NETWORK_MODE:
+        # Network mode = HTTPS context. Force-elevate any stray http: references
+        # and block any mixed content.
+        csp += " upgrade-insecure-requests; block-all-mixed-content;"
+        # HSTS: only set in network mode. Tells the browser to use HTTPS for
+        # this host for the next year. Cached by the browser.
+        response.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+        )
+    response.headers.setdefault("Content-Security-Policy", csp)
     return response
 
 # ---------------------------------------------------------------------------
@@ -169,6 +325,7 @@ class ReflectRequest(BaseModel):
 class ReflectResponse(BaseModel):
     entry_id: int
     mode: str
+    autostruct_task_id: str | None = None
 
 
 class SpeakRequest(BaseModel):
@@ -200,11 +357,16 @@ async def serve_index() -> FileResponse:
 
 @app.post("/reflect", response_model=ReflectResponse)
 async def reflect(req: ReflectRequest, background_tasks: BackgroundTasks) -> ReflectResponse:
-    """Save today's entry immediately, then generate reflection asynchronously.
+    """Save today's entry immediately, then generate reflection + tags asynchronously.
 
     The entry is persisted with status='pending' before the model is called.
     If the model is slow or unreachable the entry is never lost — it appears
     as 'pending' and the result lands when the model finishes.
+
+    Tags are auto-generated by the AI and applied automatically when ready.
+    The SPA can poll /autostruct-status/{task_id} to see when tags are ready,
+    then call POST /entry-tags to apply them, or it can just wait for the
+    next timeline refresh.
     """
     if not req.notes.strip():
         raise HTTPException(status_code=400, detail="Notes cannot be empty.")
@@ -239,7 +401,15 @@ async def reflect(req: ReflectRequest, background_tasks: BackgroundTasks) -> Ref
         _run_reflection_task, entry_id, notes, mode, config_snapshot
     )
 
-    return ReflectResponse(entry_id=entry_id, mode=mode)
+    # Also kick off an autostruct task for AI-generated tags
+    autostruct_task_id = str(uuid.uuid4())
+    existing_tags = get_all_tags()
+    _autostruct_tasks[autostruct_task_id] = {"status": "pending", "result": None, "entry_id": entry_id}
+    background_tasks.add_task(
+        _run_autostruct_and_apply_task, autostruct_task_id, entry_id, notes, config_snapshot, existing_tags
+    )
+
+    return ReflectResponse(entry_id=entry_id, mode=mode, autostruct_task_id=autostruct_task_id)
 
 
 def _run_reflection_task(entry_id: int, notes: str, mode: str, config_snapshot: dict) -> None:
@@ -461,12 +631,40 @@ async def get_tags() -> list[dict]:
     return get_all_tags()
 
 
+@app.get("/tags/categories")
+async def get_categories() -> list[str]:
+    """Return all tag categories currently in use."""
+    return get_all_categories()
+
+
 @app.get("/tags/search")
 async def tag_search(q: str, category: str | None = None) -> list[dict]:
     """Search tags by name prefix."""
     if not q.strip():
         return []
     return search_tags(q, category)
+
+
+@app.post("/autostruct-rerun/{entry_id}")
+async def autostruct_rerun(entry_id: int, background_tasks: BackgroundTasks) -> dict:
+    """Re-run autostruct for an existing entry. Returns a task_id to poll."""
+    # Fetch the entry text
+    entries = get_all_entries()
+    entry = next((e for e in entries if e["id"] == entry_id), None)
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found.")
+    entry_text = entry.get("notes") or ""
+    if not entry_text.strip():
+        raise HTTPException(status_code=400, detail="Entry has no text to analyze.")
+
+    task_id = str(uuid.uuid4())
+    config_snapshot = llm.snapshot_config()
+    existing_tags = get_all_tags()
+    _autostruct_tasks[task_id] = {"status": "pending", "result": None, "entry_id": entry_id}
+    background_tasks.add_task(
+        _run_autostruct_and_apply_task, task_id, entry_id, entry_text, config_snapshot, existing_tags
+    )
+    return {"task_id": task_id}
 
 
 @app.post("/entry-tags")
@@ -704,6 +902,50 @@ def _run_autostruct_task(task_id: str, entry_text: str, config_snapshot: dict, e
         _autostruct_tasks[task_id] = {"status": "error", "error": "Unexpected error during auto-structuring."}
 
 
+def _run_autostruct_and_apply_task(
+    task_id: str, entry_id: int, entry_text: str, config_snapshot: dict, existing_tags: list[dict]
+) -> None:
+    """Background task: run autostruct AND auto-apply the tags to the entry.
+
+    Tags are open-ended: any category the AI invents is preserved, new
+    tags are created on the fly, and the entry's tag list is replaced
+    with whatever the model suggested (preserving user-added tags that
+    the model didn't repeat would be a nice future enhancement).
+    """
+    try:
+        result = llm.suggest_autostruct_from_snapshot(config_snapshot, entry_text, existing_tags)
+        # Apply tags to the entry
+        flat_tags: list[dict] = []
+        for cat, names in (result.get("tags") or {}).items():
+            for name in names:
+                flat_tags.append({"name": name, "category": cat})
+        if flat_tags:
+            tag_ids = [get_or_create_tag(t["name"], t["category"]) for t in flat_tags]
+            save_entry_tags(entry_id, tag_ids)
+        # Optionally fill in any missing signals (only if the entry doesn't have them)
+        signals = result.get("signals") or {}
+        kwargs = {}
+        for key in ("energy", "sleep_quality", "sensory_load", "overwhelm"):
+            if signals.get(key) in ("low", "med", "high"):
+                kwargs[key] = signals[key]
+        if kwargs:
+            update_entry_signals(entry_id, **kwargs)
+        _autostruct_tasks[task_id] = {
+            "status": "ready",
+            "result": result,
+            "entry_id": entry_id,
+            "applied": True,
+        }
+    except llm.LLMError as exc:
+        _autostruct_tasks[task_id] = {"status": "error", "error": str(exc), "entry_id": entry_id}
+    except Exception as exc:
+        _autostruct_tasks[task_id] = {
+            "status": "error",
+            "error": "Unexpected error during auto-tagging.",
+            "entry_id": entry_id,
+        }
+
+
 @app.get("/autostruct-status/{task_id}")
 async def autostruct_status(task_id: str) -> dict:
     """Return the current status and result for an auto-struct task."""
@@ -849,6 +1091,74 @@ async def vault_lock() -> dict:
     _v.lock_vault()
     install_vault_connection_factory(None)
     return {"ok": True}
+
+
+@app.post("/vault-reset")
+async def vault_reset(request: Request) -> dict:
+    """Destructively reset the vault: delete vault.json and the encrypted DB.
+
+    Used when the user is locked out (forgot passphrase + no recovery key).
+    All journal data is permanently lost. The vault is left in a fresh state
+    so the next request triggers first-time setup.
+    """
+    from app import vault as _v
+
+    body = await request.json()
+    confirm = body.get("confirm", "")
+    if confirm != "reset":
+        raise HTTPException(status_code=400, detail="Confirmation required: send {\"confirm\": \"reset\"}.")
+
+    if not _v.is_vault_setup():
+        return {"ok": True, "message": "Vault was not set up. Nothing to reset."}
+
+    # Lock first to close any open connection
+    _v.lock_vault()
+    install_vault_connection_factory(None)
+
+    # Delete vault.json, encrypted DB, and all temp files
+    _v.reset_vault_data_files()
+
+    # Re-run migrations so a fresh plaintext DB exists for the next setup
+    try:
+        init_db()
+    except Exception:
+        pass  # best-effort; setup will retry
+
+    return {"ok": True, "message": "Vault reset. All encrypted data has been permanently deleted."}
+
+
+@app.post("/vault-change-passphrase")
+async def vault_change_passphrase(request: Request) -> dict:
+    """Change the vault passphrase. Requires the current passphrase to be unlocked."""
+    from app import vault as _v
+
+    if not _v.is_vault_setup():
+        raise HTTPException(status_code=400, detail="Vault not set up.")
+    if not _v._vault.is_unlocked():
+        raise HTTPException(status_code=401, detail="Vault is locked. Unlock it first.")
+
+    body = await request.json()
+    old_passphrase = body.get("old_passphrase", "")
+    new_passphrase = body.get("new_passphrase", "")
+    if not old_passphrase or not new_passphrase:
+        raise HTTPException(status_code=400, detail="Both old and new passphrases are required.")
+    if len(new_passphrase) < 8:
+        raise HTTPException(status_code=400, detail="New passphrase must be at least 8 characters.")
+    if old_passphrase == new_passphrase:
+        raise HTTPException(status_code=400, detail="New passphrase must be different from the old one.")
+
+    try:
+        _v.change_passphrase(old_passphrase, new_passphrase)
+        # change_passphrase re-derives keys and re-opens the DB with the new passphrase.
+        # Reinstall the connection factory so DB calls go through the new connection.
+        install_vault_connection_factory(lambda: _v._vault.conn)
+    except ValueError as exc:
+        # Most likely the old passphrase is wrong (DB key derivation fails on decrypt)
+        raise HTTPException(status_code=401, detail=f"Could not change passphrase: {exc}") from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Passphrase change failed: {exc}") from exc
+
+    return {"ok": True, "message": "Passphrase changed. Your journal entries are now re-encrypted with the new passphrase."}
 
 
 @app.post("/vault-recovery-unlock")
@@ -1167,3 +1477,281 @@ async def narrate_correlations_status(task_id: str) -> dict:
     elif task["status"] == "error":
         resp["error"] = task.get("error", "Unknown error")
     return resp
+
+
+# ===========================================================================
+# Network-mode authentication endpoints
+# ===========================================================================
+# These endpoints manage the access password, device whitelist, and session
+# tokens. They are only meaningful when the server runs in network mode, but
+# they are always mounted so the SPA can check /auth/status regardless.
+
+class AuthLoginRequest(BaseModel):
+    password: str
+    device_name: str
+    device_id: str | None = None
+
+
+class AuthApproveRequest(BaseModel):
+    device_id: str
+    action: str  # "approve" or "deny"
+
+
+class AuthChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+
+class AuthEnableRequest(BaseModel):
+    password: str
+
+
+class AuthDisableRequest(BaseModel):
+    password: str
+
+
+@app.get("/auth/status")
+async def auth_status():
+    """Public endpoint: returns whether auth is enabled and network mode is on."""
+    from app import auth as _auth
+    return {
+        "auth_enabled": _auth.is_auth_enabled(),
+        "network_mode": _NETWORK_MODE,
+        **_auth.get_auth_status(),
+    }
+
+
+@app.get("/healthz")
+async def healthz():
+    """Public health check endpoint."""
+    return {"status": "ok"}
+
+
+@app.post("/auth/login")
+async def auth_login(request: Request, body: AuthLoginRequest):
+    """Authenticate with the access password. Creates a device record if new.
+
+    If the device is approved, returns a session token. If pending, returns
+    {pending: true} and the device must be approved from the desktop UI.
+    """
+    from app import auth as _auth
+    from app import ratelimit as _rl
+
+    # Rate limit: 5 attempts per 60 seconds per IP.
+    client = _client_ip(request)
+    allowed, retry_after = _rl.is_allowed(client, "/auth/login")
+    if not allowed:
+        return JSONResponse(
+            status_code=429,
+            content={"detail": f"Too many login attempts. Try again in {retry_after} seconds."},
+        )
+
+    # Verify the access password.
+    if not _auth.verify_access_password(body.password):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Incorrect access password."},
+        )
+
+    # Get or create the device record.
+    device = _auth.get_or_create_device(
+        device_id=body.device_id,
+        name=body.device_name,
+        ip=client,
+        user_agent=request.headers.get("user-agent", ""),
+    )
+
+    # If the device is approved, issue a session token.
+    if device["status"] == "approved":
+        token = _auth.issue_session_token(device["id"], device["name"])
+        return {
+            "approved": True,
+            "token": token,
+            "device_id": device["id"],
+            "device_name": device["name"],
+        }
+
+    # If pending, return pending status. The SPA will poll.
+    if device["status"] == "pending":
+        return {
+            "approved": False,
+            "pending": True,
+            "device_id": device["id"],
+            "device_name": device["name"],
+        }
+
+    # Denied or revoked.
+    return JSONResponse(
+        status_code=403,
+        content={"detail": "This device has been denied or revoked."},
+    )
+
+
+@app.post("/auth/approve")
+async def auth_approve(request: Request, body: AuthApproveRequest):
+    """Approve or deny a pending device. Must be called from an authenticated session."""
+    from app import auth as _auth
+
+    # Verify the caller is authenticated.
+    token = _extract_bearer_token(request)
+    payload = _auth.validate_session_token(token) if token else None
+    if payload is None:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Authentication required."},
+        )
+
+    if body.action not in ("approve", "deny"):
+        raise HTTPException(status_code=400, detail="Action must be 'approve' or 'deny'.")
+
+    new_status = "approved" if body.action == "approve" else "denied"
+    success = _auth.update_device_status(
+        body.device_id, new_status, approved_by=payload["sub"]
+    )
+    if not success:
+        raise HTTPException(status_code=404, detail="Device not found.")
+
+    return {"status": new_status, "device_id": body.device_id}
+
+
+@app.post("/auth/revoke")
+async def auth_revoke(request: Request, body: AuthApproveRequest):
+    """Revoke a device. Must be called from an authenticated session."""
+    from app import auth as _auth
+
+    token = _extract_bearer_token(request)
+    payload = _auth.validate_session_token(token) if token else None
+    if payload is None:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Authentication required."},
+        )
+
+    # Can't revoke your own device.
+    if body.device_id == payload["sub"]:
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "Cannot revoke your own device. Use /auth/logout instead."},
+        )
+
+    success = _auth.update_device_status(body.device_id, "revoked")
+    if not success:
+        raise HTTPException(status_code=404, detail="Device not found.")
+
+    return {"status": "revoked", "device_id": body.device_id}
+
+
+@app.get("/auth/devices")
+async def auth_devices(request: Request):
+    """List all devices. Must be called from an authenticated session."""
+    from app import auth as _auth
+
+    token = _extract_bearer_token(request)
+    payload = _auth.validate_session_token(token) if token else None
+    if payload is None:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Authentication required."},
+        )
+
+    devices = _auth.list_devices()
+    return {"devices": devices}
+
+
+@app.post("/auth/logout")
+async def auth_logout(request: Request):
+    """Revoke the current device, effectively logging out."""
+    from app import auth as _auth
+
+    token = _extract_bearer_token(request)
+    payload = _auth.validate_session_token(token) if token else None
+    if payload is None:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Authentication required."},
+        )
+
+    _auth.update_device_status(payload["sub"], "revoked")
+    return {"status": "logged_out"}
+
+
+@app.post("/auth/change-password")
+async def auth_change_password(request: Request, body: AuthChangePasswordRequest):
+    """Change the access password. Must be called from an authenticated session."""
+    from app import auth as _auth
+
+    token = _extract_bearer_token(request)
+    payload = _auth.validate_session_token(token) if token else None
+    if payload is None:
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Authentication required."},
+        )
+
+    try:
+        success = _auth.change_access_password(body.old_password, body.new_password)
+        if not success:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Incorrect current password."},
+            )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return {"status": "password_changed"}
+
+
+@app.post("/auth/enable")
+async def auth_enable(request: Request, body: AuthEnableRequest):
+    """Enable network authentication. Only callable from localhost (127.0.0.1).
+
+    This endpoint is NOT auth-gated (it's listed in PUBLIC_PATHS) because
+    the caller doesn't have a session token yet — they're setting one up.
+    But it MUST only be callable from the local machine.
+    """
+    from app import auth as _auth
+
+    # Security: only allow from loopback.
+    client = _client_ip(request)
+    if client not in ("127.0.0.1", "::1", "localhost"):
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "Network authentication can only be enabled from this computer."},
+        )
+
+    try:
+        _auth.enable_auth(body.password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+    return {"status": "enabled"}
+
+
+@app.post("/auth/disable")
+async def auth_disable(request: Request, body: AuthDisableRequest):
+    """Disable network authentication entirely. Only callable from localhost.
+
+    Deletes auth.json and all device records. The server should be
+    restarted with `python run.py` (without --network) afterwards.
+    """
+    from app import auth as _auth
+
+    # Security: only allow from loopback.
+    client = _client_ip(request)
+    if client not in ("127.0.0.1", "::1", "localhost"):
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "Network authentication can only be disabled from this computer."},
+        )
+
+    # Verify the access password before disabling.
+    if not _auth.verify_access_password(body.password):
+        return JSONResponse(
+            status_code=401,
+            content={"detail": "Incorrect access password."},
+        )
+
+    _auth.disable_auth()
+    return {"status": "disabled"}

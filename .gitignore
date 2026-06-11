@@ -2,6 +2,9 @@
 # Secrets & local config — NEVER commit these
 # ============================================================
 data/config.json
+data/auth.json
+data/devices.json
+data/tls/
 .env
 .env.*
 *.pem

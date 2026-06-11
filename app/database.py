@@ -531,6 +531,15 @@ def get_all_tags() -> list[dict]:
         return [dict(row) for row in rows]
 
 
+def get_all_categories() -> list[str]:
+    """Return distinct tag categories in use, ordered alphabetically."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT category FROM tags ORDER BY category"
+        ).fetchall()
+        return [row["category"] for row in rows]
+
+
 def search_tags(query: str, category: Optional[str] = None) -> list[dict]:
     """Search tags by name prefix (case-insensitive). Optionally filter by category."""
     with get_connection() as conn:

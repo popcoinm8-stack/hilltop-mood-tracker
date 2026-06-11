@@ -944,14 +944,6 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
 }
-.tags-category-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin-bottom: 0.35rem;
-}
 .tag-row {
   display: flex;
   align-items: center;
@@ -988,6 +980,19 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
   opacity: 0.7;
 }
 .tag-chip-remove:hover { opacity: 1; }
+
+/* ===== TAG CATEGORY GROUPS ===== */
+.tag-category-group {
+  margin-bottom: 0.5rem;
+}
+.tag-category-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-right: 0.5rem;
+}
 
 /* ===== AUTO-STRUCT SUGGESTIONS ===== */
 .autostruct-section {
@@ -1049,58 +1054,6 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
 .autostruct-signal-btn.selected-med { background: #fbbf24; border-color: #fbbf24; color: #1a1a2e; }
 .autostruct-signal-btn.selected-high { background: #5bca8e; border-color: #5bca8e; color: #fff; }
 .autostruct-signal-btn.dimmed { opacity: 0.35; }
-.autostruct-tag-row {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-bottom: 0.4rem;
-  flex-wrap: wrap;
-}
-.autostruct-tag-label {
-  font-size: 0.62rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  min-width: 70px;
-}
-.autostruct-suggested-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.15rem 0.4rem;
-  background: var(--accent-subtle);
-  border: 1px solid var(--border-accent);
-  border-radius: 99px;
-  font-size: 0.72rem;
-  color: var(--accent);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-.autostruct-suggested-chip:hover { background: var(--accent-muted); }
-.autostruct-suggested-chip.accepted { background: var(--accent); color: var(--accent-text); }
-.autostruct-apply-hint {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 0.5rem;
-  font-style: italic;
-}
-.autostruct-dismiss {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 0.72rem;
-  padding: 0;
-  margin-left: 0.4rem;
-  text-decoration: underline;
-}
-.autostruct-dismiss:hover { color: var(--text-secondary); }
-.autostruct-error {
-  font-size: 0.8rem;
-  color: #f87171;
-  padding: 0.25rem 0;
-}
 .autostruct-btn {
   margin-top: 0.5rem;
   padding: 0.35rem 0.75rem;
@@ -1780,6 +1733,104 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
 }
 .vault-checkbox-row input[type="checkbox"] { margin-top: 0.1rem; flex-shrink: 0; }
 
+/* ===== RESPONSIVE — phones ===== */
+@media (max-width: 640px) {
+  :root { font-size: 15px; }
+  .app-wrap { padding: 1.25rem 0.85rem 5rem; max-width: 100%; }
+  .app-header h1 { font-size: 1.25rem; }
+  .tab-bar button { padding: 0.55rem 0.25rem; font-size: 0.78rem; }
+  .theme-toggle { top: 0.75rem; right: 0.75rem; }
+  .provider-badge { bottom: 0.75rem; right: 0.75rem; font-size: 0.68rem; padding: 0.3rem 0.55rem; }
+  textarea, input[type="text"], input[type="password"], input[type="number"], select {
+    font-size: 16px !important; /* prevent iOS zoom-on-focus */
+  }
+  .vault-card, .auth-card { padding: 1.25rem 1.25rem; max-width: 100%; }
+  .settings-section { padding: 0.85rem; }
+  .modal-box { width: 95%; padding: 1rem; }
+  .tag-chip-row { flex-wrap: wrap; }
+  #recording-ui { flex-direction: column; align-items: stretch; }
+}
+
+@media (max-width: 380px) {
+  /* Small phones (iPhone SE 1st gen etc.) */
+  .app-wrap { padding: 0.75rem 0.6rem 4.5rem; }
+  .tab-bar { gap: 0.05rem; padding: 0.15rem; }
+  .tab-bar button { font-size: 0.72rem; padding: 0.45rem 0.15rem; }
+  .vault-card, .auth-card { padding: 1rem 0.9rem; }
+  .vault-title, .auth-title { font-size: 1.05rem; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  /* Touch devices: bigger tap targets */
+  button { min-height: 44px; }
+  .vault-btn, .auth-btn { min-height: 48px; }
+}
+
+/* ===== AUTH OVERLAY ===== */
+#auth-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.78); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; z-index: 110; padding: 1rem;
+}
+#auth-overlay.hidden { display: none; }
+.auth-card {
+  background: var(--bg-card); border-radius: var(--radius-lg); padding: 1.75rem;
+  max-width: 420px; width: 100%; box-shadow: var(--shadow-elevated);
+  border: 1px solid var(--border);
+}
+.auth-title { font-size: 1.2rem; font-weight: 600; color: var(--text-primary); margin: 0 0 0.4rem; }
+.auth-subtitle { font-size: 0.82rem; color: var(--text-secondary); margin: 0 0 1.25rem; line-height: 1.5; }
+.auth-label { display: block; font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.35rem; font-weight: 500; }
+.auth-input {
+  width: 100%; padding: 0.65rem 0.75rem; background: var(--bg-inset);
+  border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text-primary);
+  font-family: inherit; font-size: 0.9rem; box-sizing: border-box; margin-bottom: 0.85rem;
+}
+.auth-input:focus { outline: none; border-color: var(--accent); }
+.auth-btn {
+  width: 100%; padding: 0.7rem; background: var(--accent); color: var(--accent-text);
+  border: none; border-radius: var(--radius-md); font-weight: 600; font-size: 0.9rem;
+  cursor: pointer; font-family: inherit; transition: opacity var(--transition-fast);
+}
+.auth-btn:hover { opacity: 0.85; }
+.auth-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.auth-btn.secondary { background: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--border); }
+.auth-status { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.5rem; min-height: 1em; }
+.auth-status.error { color: #f87171; }
+.auth-status.success { color: var(--accent); }
+.auth-spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid var(--border-accent); border-top-color: var(--accent);
+  border-radius: 50%; animation: auth-spin 0.8s linear infinite; margin-right: 0.5rem;
+  vertical-align: middle;
+}
+@keyframes auth-spin { to { transform: rotate(360deg); } }
+
+.auth-device-list { margin-top: 1rem; max-height: 200px; overflow-y: auto; }
+.auth-device-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 0; border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.82rem;
+}
+.auth-device-row:last-child { border-bottom: none; }
+.auth-device-info { flex: 1; min-width: 0; }
+.auth-device-name { color: var(--text-primary); font-weight: 500; }
+.auth-device-meta { color: var(--text-muted); font-size: 0.72rem; }
+.auth-status-pill {
+  display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.auth-status-pill.approved { background: var(--accent-subtle); color: var(--accent); }
+.auth-status-pill.pending { background: rgba(251,191,36,0.14); color: #fbbf24; }
+.auth-status-pill.denied, .auth-status-pill.revoked { background: rgba(248,113,113,0.14); color: #f87171; }
+.auth-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
+.auth-actions button {
+  padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg-inset); color: var(--text-primary);
+  cursor: pointer; font-family: inherit; font-weight: 500;
+}
+.auth-actions button:hover { border-color: var(--border-accent); }
+.auth-actions button.danger { color: #f87171; }
+
 /* ===== PRINT — clean clinician handout ===== */
 @media print {
   body {
@@ -1872,6 +1923,13 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
   </div>
 </div>
 
+<!-- Network access overlay: login + device approval -->
+<div id="auth-overlay" class="hidden">
+  <div class="auth-card" id="auth-card">
+    <!-- Content injected by initAuthUI() -->
+  </div>
+</div>
+
 <!-- Provider privacy badge -->
 <div class="provider-badge" id="provider-badge" title="Shows whether AI is running locally or via cloud">
   <span class="provider-dot local" id="provider-dot"></span>
@@ -1939,64 +1997,18 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
           <button class="signal-btn" data-signal="overwhelm" data-value="high" onclick="setSignal(this)">High</button>
         </div>
       </div>
-      <button id="autostruct-btn" class="autostruct-btn" onclick="runAutoStruct()">Suggest tags &amp; signals</button>
     </div>
 
-    <!-- Tags -->
+    <!-- AI-generated tags (auto-applied after entry creation) -->
     <div class="tags-area" id="tags-area">
-      <div class="tag-row">
-        <div class="tags-category-label" style="width:100%;">People</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+        <div style="font-size:0.82rem;color:var(--text-secondary);font-weight:600;">Tags</div>
+        <button id="autostruct-btn" class="autostruct-btn" onclick="runAutoStruct()" style="display:none;">Re-suggest tags</button>
       </div>
-      <div class="tag-row">
-        <div class="tag-chips" id="chips-people"></div>
-        <div class="tag-input-wrap">
-          <input class="tag-input" id="input-people" data-category="people" placeholder="Add person..." oninput="handleTagInput(this)" onkeydown="handleTagKeydown(event, this)">
-          <button class="tag-add-btn" onclick="addTagFromInput(document.getElementById('input-people'))">+</button>
-        </div>
-        <div class="tag-suggestions"><div class="tag-suggestion-list" id="suggest-people"></div></div>
+      <div id="tags-loading" style="display:none;color:var(--text-muted);font-size:0.78rem;">
+        <span class="auth-spinner"></span> Generating tags…
       </div>
-      <div class="tag-row">
-        <div class="tags-category-label" style="width:100%;">Places</div>
-      </div>
-      <div class="tag-row">
-        <div class="tag-chips" id="chips-places"></div>
-        <div class="tag-input-wrap">
-          <input class="tag-input" id="input-places" data-category="places" placeholder="Add place..." oninput="handleTagInput(this)" onkeydown="handleTagKeydown(event, this)">
-          <button class="tag-add-btn" onclick="addTagFromInput(document.getElementById('input-places'))">+</button>
-        </div>
-        <div class="tag-suggestions"><div class="tag-suggestion-list" id="suggest-places"></div></div>
-      </div>
-      <div class="tag-row">
-        <div class="tags-category-label" style="width:100%;">Activities</div>
-      </div>
-      <div class="tag-row">
-        <div class="tag-chips" id="chips-activities"></div>
-        <div class="tag-input-wrap">
-          <input class="tag-input" id="input-activities" data-category="activities" placeholder="Add activity..." oninput="handleTagInput(this)" onkeydown="handleTagKeydown(event, this)">
-          <button class="tag-add-btn" onclick="addTagFromInput(document.getElementById('input-activities'))">+</button>
-        </div>
-        <div class="tag-suggestions"><div class="tag-suggestion-list" id="suggest-activities"></div></div>
-      </div>
-      <div class="tag-row">
-        <div class="tags-category-label" style="width:100%;">Triggers</div>
-      </div>
-      <div class="tag-row">
-        <div class="tag-chips" id="chips-triggers"></div>
-        <div class="tag-input-wrap">
-          <input class="tag-input" id="input-triggers" data-category="triggers" placeholder="Add trigger..." oninput="handleTagInput(this)" onkeydown="handleTagKeydown(event, this)">
-          <button class="tag-add-btn" onclick="addTagFromInput(document.getElementById('input-triggers'))">+</button>
-        </div>
-        <div class="tag-suggestions"><div class="tag-suggestion-list" id="suggest-triggers"></div></div>
-      </div>
-    </div>
-
-    <!-- Auto-struct suggestions -->
-    <div id="autostruct-section" class="autostruct-section" style="display:none;">
-      <div id="autostruct-loading" class="autostruct-loading" style="display:none;">
-        <div class="autostruct-spinner"></div>
-        <span>Analyzing entry…</span>
-      </div>
-      <div id="autostruct-content"></div>
+      <div id="tags-content"></div>
     </div>
 
     <div id="recording-ui">
@@ -2464,6 +2476,107 @@ button { font-family: inherit; cursor: pointer; transition: all var(--transition
       <div id="restore-status" style="margin-top:0.5rem;font-size:0.82rem;"></div>
     </div>
   </div>
+
+  <!-- Change passphrase -->
+  <div class="settings-section" style="margin-top:1.5rem;">
+    <div class="settings-section-title">Database Passphrase</div>
+    <p class="settings-section-hint">Change the passphrase used to encrypt your journal. Your entries stay encrypted at rest — only the passphrase is rotated.</p>
+    <div id="vault-passphrase-status" style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem;"></div>
+    <div class="settings-field">
+      <label for="cp-old">Current passphrase</label>
+      <input type="password" id="cp-old" placeholder="Your current passphrase" autocomplete="current-password" style="font-size:0.85rem;">
+    </div>
+    <div class="settings-field">
+      <label for="cp-new">New passphrase</label>
+      <input type="password" id="cp-new" placeholder="At least 8 characters" autocomplete="new-password" style="font-size:0.85rem;" oninput="onChangePassInput()">
+      <span id="cp-strength" style="font-size:0.75rem;color:var(--text-muted);min-height:1em;display:block;margin-top:0.2rem;"></span>
+    </div>
+    <div class="settings-field">
+      <label for="cp-new2">Confirm new passphrase</label>
+      <input type="password" id="cp-new2" placeholder="Repeat new passphrase" autocomplete="new-password" style="font-size:0.85rem;">
+    </div>
+    <div style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+      <button id="cp-save-btn" class="btn-primary" onclick="doChangePassphrase()">Change passphrase</button>
+      <span id="cp-save-status" style="font-size:0.78rem;"></span>
+    </div>
+  </div>
+
+  <!-- Network Access: auth, device whitelisting, password management -->
+  <div class="settings-section" style="margin-top:1.5rem;">
+    <div class="settings-section-title">Network Access</div>
+    <p class="settings-section-hint">When the server runs in <code>--network</code> mode, devices need an access password and approval before they can use Mood Tracker over the LAN.</p>
+    <div id="network-access-status" style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.75rem;">
+      Loading…
+    </div>
+
+    <!-- Enable network access (local mode only) -->
+    <div id="network-enable-section" style="display:none;">
+      <div class="settings-field">
+        <label for="access-password">Access password (10+ characters)</label>
+        <input type="password" id="access-password" placeholder="Choose an access password" autocomplete="new-password" style="font-size:0.85rem;">
+      </div>
+      <div class="settings-field">
+        <label for="access-password2">Confirm access password</label>
+        <input type="password" id="access-password2" placeholder="Repeat access password" autocomplete="new-password" style="font-size:0.85rem;">
+      </div>
+      <div style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="doEnableNetwork()">Enable network access</button>
+        <span id="network-enable-status" style="font-size:0.78rem;"></span>
+      </div>
+      <p class="settings-section-hint" style="margin-top:0.75rem;font-size:0.75rem;">
+        After enabling, restart the server with <code>python run.py --network</code>. Then approve new devices from this panel.
+      </p>
+    </div>
+
+    <!-- Device management (network mode) -->
+    <div id="network-devices-section" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+        <div class="settings-section-title" style="margin:0;font-size:0.85rem;">Connected Devices</div>
+        <button onclick="loadDeviceList()" style="padding:0.3rem 0.7rem;font-size:0.75rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);cursor:pointer;font-family:inherit;">Refresh</button>
+      </div>
+      <div id="device-list" class="auth-device-list">
+        <div style="color:var(--text-muted);font-size:0.8rem;padding:0.5rem 0;">Loading…</div>
+      </div>
+    </div>
+
+    <!-- Change access password (network mode) -->
+    <div id="network-password-section" style="display:none;margin-top:1.5rem;">
+      <div class="settings-section-title" style="font-size:0.85rem;">Change Access Password</div>
+      <div class="settings-field">
+        <label for="ap-old">Current access password</label>
+        <input type="password" id="ap-old" placeholder="Your current access password" autocomplete="current-password" style="font-size:0.85rem;">
+      </div>
+      <div class="settings-field">
+        <label for="ap-new">New access password</label>
+        <input type="password" id="ap-new" placeholder="At least 10 characters" autocomplete="new-password" style="font-size:0.85rem;">
+      </div>
+      <div class="settings-field">
+        <label for="ap-new2">Confirm new access password</label>
+        <input type="password" id="ap-new2" placeholder="Repeat new access password" autocomplete="new-password" style="font-size:0.85rem;">
+      </div>
+      <div style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="doChangeAccessPassword()">Change access password</button>
+        <span id="ap-save-status" style="font-size:0.78rem;"></span>
+      </div>
+      <p class="settings-section-hint" style="margin-top:0.5rem;font-size:0.75rem;">
+        All approved devices will be revoked when you change the password.
+      </p>
+    </div>
+
+    <!-- Disable network access (local mode only) -->
+    <div id="network-disable-section" style="display:none;margin-top:1.5rem;">
+      <div class="settings-section-title" style="font-size:0.85rem;">Disable Network Access</div>
+      <p class="settings-section-hint" style="font-size:0.75rem;">Removes the access password and revokes all device approvals. Restart with <code>python run.py</code> after.</p>
+      <div class="settings-field">
+        <label for="disable-pw">Confirm access password</label>
+        <input type="password" id="disable-pw" placeholder="Your access password" autocomplete="current-password" style="font-size:0.85rem;">
+      </div>
+      <div style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        <button class="btn-primary" style="background:#f87171;" onclick="doDisableNetwork()">Disable network access</button>
+        <span id="network-disable-status" style="font-size:0.78rem;"></span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Timeline detail modal -->
@@ -2528,7 +2641,7 @@ function showTab(name) {
   if (name === 'clinician') initClinicianTab();
   if (name === 'nd') initNDTab();
   if (name === 'search') initSearchTab();
-  if (name === 'settings') initSettingsTab();
+  if (name === 'settings') { initSettingsTab(); initPassphraseSection(); }
   if (name === 'trends') loadCharts();
 }
 
@@ -2538,7 +2651,7 @@ function showTab(name) {
 let currentEntryId = null;
 let currentMode = 'quick';
 let currentSignals = { energy: null, sleep_quality: null, sensory_load: null, overwhelm: null };
-let currentTags = { people: [], places: [], activities: [], triggers: [] };
+let currentTags = [];  // flat array of {name, category} — auto-populated by AI
 window.lastTranscription = null;  // raw dictation captured before submit
 
 const modeHints = {
@@ -2554,7 +2667,8 @@ function setMode(mode) {
   document.getElementById('mode-hint').textContent = modeHints[mode];
   currentEntryId = null;
   clearSignals();
-  TAG_CATEGORIES.forEach(cat => { currentTags[cat] = []; renderTagChips(cat); });
+  currentTags = [];
+  renderTags();
 }
 
 // ============================================================
@@ -2568,7 +2682,7 @@ async function doReflect() {
   btn.disabled = true;
   status.textContent = 'Saving entry...';
   try {
-    const res = await fetch('/reflect', {
+    const res = await authFetch('/reflect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2589,8 +2703,16 @@ async function doReflect() {
     const data = await res.json();
     currentEntryId = data.entry_id;
     window.lastTranscription = null;
-    // Save tags for this entry
-    await saveCurrentTags();
+
+    // Show "Re-suggest tags" button now that entry is saved
+    document.getElementById('autostruct-btn').style.display = '';
+    document.getElementById('tags-loading').style.display = 'block';
+    document.getElementById('tags-content').innerHTML = '';
+
+    // Poll for autostruct completion (tags auto-applied by server)
+    if (data.autostruct_task_id) {
+      pollAutoStruct(data.autostruct_task_id);
+    }
 
     // Poll for reflection completion
     status.textContent = 'Reflecting...';
@@ -2603,7 +2725,7 @@ async function doReflect() {
       await sleep(pollInterval);
       waited += pollInterval;
       try {
-        const statusRes = await fetch('/reflect-status/' + data.entry_id);
+        const statusRes = await authFetch('/reflect-status/' + data.entry_id);
         if (statusRes.ok) {
           const s = await statusRes.json();
           if (s.status === 'ready') {
@@ -2624,6 +2746,9 @@ async function doReflect() {
       status.textContent = 'Entry saved (reflection still in progress).';
     }
 
+    // Refresh timeline to show the new entry with its tags
+    await loadTimeline();
+
     // Clear form for next entry
     clearJournalEntry();
   } catch (e) {
@@ -2631,6 +2756,72 @@ async function doReflect() {
   } finally {
     btn.disabled = false;
   }
+}
+
+async function pollAutoStruct(taskId) {
+  // Poll until autostruct is done, then refresh tags display
+  let waited = 0;
+  const maxWait = 60000;
+  const interval = 1500;
+  while (waited < maxWait) {
+    await sleep(interval);
+    waited += interval;
+    try {
+      const res = await authFetch('/autostruct-status/' + taskId);
+      const s = await res.json();
+      if (s.status === 'ready') {
+        // Tags were auto-applied by the server. Refresh display.
+        document.getElementById('tags-loading').style.display = 'none';
+        if (s.result && s.result.tags) {
+          currentTags = [];
+          for (const [cat, names] of Object.entries(s.result.tags || {})) {
+            for (const name of names) {
+              currentTags.push({ name, category: cat });
+            }
+          }
+          renderTags();
+        }
+        // Also apply AI-suggested signals if the user hasn't set them manually
+        if (s.result && s.result.signals) {
+          const sigs = s.result.signals;
+          if (!currentSignals.energy && sigs.energy) {
+            setSignalByName('energy', sigs.energy);
+          }
+          if (!currentSignals.sleep_quality && sigs.sleep_quality) {
+            setSignalByName('sleep_quality', sigs.sleep_quality);
+          }
+          if (!currentSignals.sensory_load && sigs.sensory_load) {
+            setSignalByName('sensory_load', sigs.sensory_load);
+          }
+          if (!currentSignals.overwhelm && sigs.overwhelm) {
+            setSignalByName('overwhelm', sigs.overwhelm);
+          }
+        }
+        return;
+      } else if (s.status === 'error') {
+        document.getElementById('tags-loading').style.display = 'none';
+        document.getElementById('tags-content').innerHTML =
+          '<div style="font-size:0.78rem;color:var(--text-muted);">Could not generate tags automatically.</div>';
+        return;
+      }
+      // pending: keep polling
+    } catch (_) {
+      // Network glitch: keep polling
+    }
+  }
+  // Timeout
+  document.getElementById('tags-loading').style.display = 'none';
+}
+
+function setSignalByName(name, value) {
+  // Set a signal button by name and value (e.g. 'energy', 'low')
+  currentSignals[name] = value;
+  document.querySelectorAll('[data-signal="' + name + '"]').forEach(b => {
+    b.classList.remove('active-low', 'active-med', 'active-high');
+    if (b.dataset.value === value) {
+      b.classList.add('active-' + value);
+    }
+  });
 }
 
 function sleep(ms) {
@@ -2666,283 +2857,176 @@ function clearSignals() {
 }
 
 // ============================================================
-// AUTO-STRUCT: suggest tags & signals
+// AUTO-STRUCT: AI-generated tags (auto-applied after entry creation)
 // ============================================================
-let autoStructPending = null; // { task_id, result, dismissed }
+let autoStructTaskId = null;
 
 async function runAutoStruct() {
   const notes = document.getElementById('notes').value.trim();
   if (!notes) return;
   const btn = document.getElementById('autostruct-btn');
   btn.disabled = true;
-  document.getElementById('autostruct-section').style.display = 'block';
-  document.getElementById('autostruct-loading').style.display = 'flex';
-  document.getElementById('autostruct-content').innerHTML = '';
-  autoStructPending = null;
+  btn.textContent = 'Generating…';
+  document.getElementById('tags-loading').style.display = 'block';
+  document.getElementById('tags-content').innerHTML = '';
 
   try {
-    const res = await fetch('/autostruct', {
+    const res = await authFetch('/autostruct', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ entry_text: notes }),
     });
     if (!res.ok) throw new Error('Request failed');
     const data = await res.json();
+    autoStructTaskId = data.task_id;
 
     // Poll until ready
     let done = false;
     while (!done) {
       await sleep(1200);
       try {
-        const statusRes = await fetch('/autostruct-status/' + data.task_id);
+        const statusRes = await authFetch('/autostruct-status/' + data.task_id);
         const s = await statusRes.json();
         if (s.status === 'ready') {
-          autoStructPending = { task_id: data.task_id, result: s.result, dismissed: false };
-          renderAutoStructSuggestions(s.result);
+          // Tags were auto-applied by the server. Refresh them.
+          await refreshEntryTags();
+          document.getElementById('tags-loading').style.display = 'none';
           done = true;
         } else if (s.status === 'error') {
-          renderAutoStructError(s.error || 'An error occurred.');
+          document.getElementById('tags-loading').style.display = 'none';
+          document.getElementById('tags-content').innerHTML =
+            '<div style="font-size:0.78rem;color:var(--text-muted);">Could not generate tags. Try again or add tags manually.</div>';
           done = true;
         }
       } catch (_) {}
     }
   } catch (e) {
-    renderAutoStructError(e.message);
+    document.getElementById('tags-loading').style.display = 'none';
+    document.getElementById('tags-content').innerHTML =
+      '<div style="font-size:0.78rem;color:var(--text-muted);">Could not generate tags.</div>';
   } finally {
     btn.disabled = false;
+    btn.textContent = 'Re-suggest tags';
   }
 }
 
-function renderAutoStructSuggestions(result) {
-  document.getElementById('autostruct-loading').style.display = 'none';
-  const signals = result.signals || {};
-  const tags = result.tags || {};
-  const hasSignals = Object.values(signals).some(v => v !== null);
-  const hasTags = Object.values(tags).some(a => a && a.length > 0);
+async function runAutoStructForEntry(entryId) {
+  // Re-run autostruct for an existing entry (re-suggest button on the entry card).
+  try {
+    const res = await authFetch('/autostruct-rerun/' + entryId, { method: 'POST' });
+    if (!res.ok) throw new Error('Request failed');
+    const data = await res.json();
+    // Poll until ready
+    let done = false;
+    while (!done) {
+      await sleep(1200);
+      try {
+        const statusRes = await authFetch('/autostruct-status/' + data.task_id);
+        const s = await statusRes.json();
+        if (s.status === 'ready') {
+          done = true;
+          // Refresh the timeline to show updated tags
+          await loadTimeline();
+        } else if (s.status === 'error') {
+          done = true;
+        }
+      } catch (_) {}
+    }
+  } catch (e) {
+    // Silently fail — the user can try again
+  }
+}
 
-  if (!hasSignals && !hasTags) {
-    document.getElementById('autostruct-content').innerHTML =
-      '<div style="font-size:0.82rem;color:var(--text-muted);">Could not infer anything from this entry. Set signals and tags manually.</div>';
+async function refreshEntryTags() {
+  // Fetch the current entry's tags from the server and render them.
+  // Used after autostruct auto-applies tags.
+  const todayEntry = currentEntries.find(e => e.entry_date === todayStr());
+  if (!todayEntry) return;
+  try {
+    const res = await authFetch('/entry-tags/' + todayEntry.id);
+    const data = await res.json();
+    currentTags = data.tags || [];
+    renderTags();
+  } catch (e) {
+    // Ignore — tags will refresh on next timeline load
+  }
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// ============================================================
+// TAGS: display (auto-generated, no manual category inputs)
+// ============================================================
+
+function renderTags() {
+  const container = document.getElementById('tags-content');
+  if (!container) return;
+  if (!currentTags || currentTags.length === 0) {
+    container.innerHTML = '<div style="font-size:0.78rem;color:var(--text-muted);">Tags will appear here after you save an entry.</div>';
     return;
   }
-
+  // Group by category
+  const grouped = {};
+  currentTags.forEach(t => {
+    const cat = t.category || 'other';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(t.name);
+  });
+  // Render: category header + tag chips
   let html = '';
-
-  if (hasSignals) {
-    html += '<div style="margin-bottom:0.75rem;">';
-    html += '<div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.4rem;">Suggested signals (tap to accept)</div>';
-    const signalDefs = [
-      { key: 'energy', label: 'Energy' },
-      { key: 'sleep_quality', label: 'Sleep' },
-      { key: 'sensory_load', label: 'Sensory' },
-      { key: 'overwhelm', label: 'Overwhelm' },
-    ];
-    signalDefs.forEach(sig => {
-      const val = signals[sig.key];
-      html += '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.25rem;">';
-      html += '<span style="font-size:0.72rem;color:var(--text-muted);min-width:65px;">' + sig.label + '</span>';
-      ['low','med','high'].forEach(lvl => {
-        const isSuggested = val === lvl;
-        const isActive = currentSignals[sig.key] === lvl;
-        const cls = 'autostruct-signal-btn' +
-          (isSuggested && isActive ? ' selected-' + lvl : '') +
-          (isSuggested && !isActive ? '' : (!isSuggested && !isActive ? ' dimmed' : ''));
-        const title = isSuggested ? 'Suggested' : '';
-        html += '<button class="' + cls + '"' +
-          (isSuggested ? ' onclick="acceptAutoSignal(\'' + sig.key + '\',\'' + lvl + '\')" title="' + title + '"' : ' disabled style="cursor:default;"') +
-          '>' + lvl.charAt(0).toUpperCase() + lvl.slice(1) + (isSuggested ? ' ★' : '') + '</button>';
-      });
-      html += '</div>';
+  const categoryOrder = ['mood', 'people', 'places', 'activities', 'triggers', 'health', 'work', 'self_care', 'relationships', 'finances'];
+  const sortedCats = Object.keys(grouped).sort((a, b) => {
+    const ai = categoryOrder.indexOf(a);
+    const bi = categoryOrder.indexOf(b);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return a.localeCompare(b);
+  });
+  sortedCats.forEach(cat => {
+    const label = cat.charAt(0).toUpperCase() + cat.slice(1).replace(/_/g, ' ');
+    html += '<div class="tag-category-group">';
+    html += '<span class="tag-category-label">' + escHtml(label) + '</span>';
+    grouped[cat].forEach(name => {
+      html += '<span class="tag-chip">' + escHtml(name) +
+        '<button class="tag-chip-remove" onclick="removeTagFromEntry(\'' + escHtml(cat).replace(/'/g, "\\'") + '\',\'' + escHtml(name).replace(/'/g, "\\'") + '\')">&times;</button>' +
+        '</span>';
     });
     html += '</div>';
-  }
-
-  if (hasTags) {
-    html += '<div style="font-size:0.68rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.4rem;">Suggested tags (click to add)</div>';
-    const tagDefs = [
-      { key: 'people', label: 'People' },
-      { key: 'places', label: 'Places' },
-      { key: 'activities', label: 'Activities' },
-      { key: 'triggers', label: 'Triggers' },
-    ];
-    tagDefs.forEach(cat => {
-      const tagList = tags[cat.key] || [];
-      if (tagList.length === 0) return;
-      const alreadyAdded = currentTags[cat.key].map(t => t.name.toLowerCase());
-      html += '<div class="autostruct-tag-row">';
-      html += '<span class="autostruct-tag-label">' + cat.label + '</span>';
-      tagList.forEach(tagName => {
-        const already = alreadyAdded.includes(tagName.toLowerCase());
-        html += '<button class="autostruct-suggested-chip' + (already ? ' accepted' : '') + '"' +
-          ' onclick="acceptAutoTag(\'' + cat.key + '\',\'' + tagName.replace(/'/g, "\\'") + '\')"' +
-          (already ? ' title="Already added"' : '') + '>' +
-          escHtml(tagName) + (already ? ' ✓' : '') + '</button>';
-      });
-      html += '</div>';
-    });
-  }
-
-  html += '<div class="autostruct-apply-hint">Signals highlighted ★ are suggestions. Click to accept or edit manually above.</div>';
-  html += '<button class="autostruct-dismiss" onclick="dismissAutoStruct()">Dismiss suggestions</button>';
-  document.getElementById('autostruct-content').innerHTML = html;
-}
-
-function acceptAutoSignal(key, value) {
-  // Accept the suggested signal
-  currentSignals[key] = value;
-  document.querySelectorAll('[data-signal="' + key + '"]').forEach(b => {
-    b.classList.remove('active-low', 'active-med', 'active-high');
-    if (b.dataset.value === value) {
-      b.classList.add('active-' + value);
-    }
   });
-  // Re-render suggestions to update visual state
-  if (autoStructPending && autoStructPending.result) {
-    renderAutoStructSuggestions(autoStructPending.result);
-  }
+  container.innerHTML = html;
 }
 
-function acceptAutoTag(category, tagName) {
-  addTag(category, tagName);
-  // Re-render suggestions to update visual state
-  if (autoStructPending && autoStructPending.result) {
-    renderAutoStructSuggestions(autoStructPending.result);
-  }
-}
-
-function dismissAutoStruct() {
-  autoStructPending = { task_id: null, result: null, dismissed: true };
-  document.getElementById('autostruct-section').style.display = 'none';
-}
-
-function renderAutoStructError(msg) {
-  document.getElementById('autostruct-loading').style.display = 'none';
-  document.getElementById('autostruct-content').innerHTML =
-    '<div class="autostruct-error">' + escHtml(msg) + '</div>';
-}
-
-function clearAutoStruct() {
-  autoStructPending = null;
-  document.getElementById('autostruct-section').style.display = 'none';
-  document.getElementById('autostruct-content').innerHTML = '';
-}
-
-// ============================================================
-// TAGS
-// ============================================================
-const TAG_CATEGORIES = ['people', 'places', 'activities', 'triggers'];
-
-function addTag(category, name) {
-  const trimmed = name.trim();
-  if (!trimmed) return;
-  if (currentTags[category].some(t => t.name.toLowerCase() === trimmed.toLowerCase())) return;
-  currentTags[category].push({ name: trimmed, category });
-  renderTagChips(category);
-}
-
-function removeTag(category, name) {
-  currentTags[category] = currentTags[category].filter(t => t.name !== name);
-  renderTagChips(category);
-}
-
-function renderTagChips(category) {
-  const container = document.getElementById('chips-' + category);
-  container.innerHTML = currentTags[category].map(t =>
-    '<span class="tag-chip">' + escHtml(t.name) +
-    '<button class="tag-chip-remove" onclick="removeTag(\'' + category + '\',\'' + escHtml(t.name).replace(/'/g, "\\'") + '\')">&times;</button>' +
-    '</span>'
-  ).join('');
-}
-
-async function saveCurrentTag(tagName, tagCategory) {
-  // Called when user picks from suggestions
-  addTag(tagCategory, tagName);
-  closeAllSuggestions();
-}
-
-function handleTagInput(inputEl) {
-  const query = inputEl.value.trim();
-  const category = inputEl.dataset.category;
-  const suggestEl = document.getElementById('suggest-' + category);
-  if (!query) {
-    suggestEl.classList.remove('open');
-    return;
-  }
-  // Search tags from server
-  fetch('/tags/search?q=' + encodeURIComponent(query) + '&category=' + encodeURIComponent(category))
-    .then(r => r.json())
-    .then(results => {
-      if (results.length === 0) {
-        suggestEl.classList.remove('open');
-        return;
-      }
-      // Only show suggestions not already added
-      const existing = new Set(currentTags[category].map(t => t.name.toLowerCase()));
-      const filtered = results.filter(t => !existing.has(t.name.toLowerCase()));
-      if (filtered.length === 0) {
-        suggestEl.classList.remove('open');
-        return;
-      }
-      suggestEl.innerHTML = filtered.map(t =>
-        '<div class="tag-suggestion-item" onclick="saveCurrentTag(\'' + escHtml(t.name).replace(/'/g, "\\'") + '\',\'' + category + '\')">' + escHtml(t.name) + '</div>'
-      ).join('');
-      suggestEl.classList.add('open');
-    }).catch(() => {});
-}
-
-function handleTagKeydown(event, inputEl) {
-  const category = inputEl.dataset.category;
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    addTag(category, inputEl.value);
-    inputEl.value = '';
-    closeAllSuggestions();
-  }
-}
-
-function addTagFromInput(inputEl) {
-  addTag(inputEl.dataset.category, inputEl.value);
-  inputEl.value = '';
-  closeAllSuggestions();
-}
-
-function closeAllSuggestions() {
-  TAG_CATEGORIES.forEach(cat => {
-    document.getElementById('suggest-' + cat).classList.remove('open');
+async function removeTagFromEntry(category, name) {
+  // Remove a tag from the current entry
+  const todayEntry = currentEntries.find(e => e.entry_date === todayStr());
+  if (!todayEntry) return;
+  // Remove from local state
+  currentTags = (currentTags || []).filter(t => !(t.category === category && t.name === name));
+  // Save updated tag list to server
+  const tagList = currentTags.map(t => ({ name: t.name, category: t.category }));
+  await authFetch('/entry-tags', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entry_id: todayEntry.id, tags: tagList }),
   });
+  renderTags();
 }
 
-// Close suggestions when clicking outside
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.tag-input-wrap') && !e.target.closest('.tag-suggestion-item')) {
-    closeAllSuggestions();
-  }
-});
-
-async function saveCurrentTags() {
-  if (!currentEntryId) return;
-  const allTags = [
-    ...currentTags.people.map(t => ({ name: t.name, category: 'people' })),
-    ...currentTags.places.map(t => ({ name: t.name, category: 'places' })),
-    ...currentTags.activities.map(t => ({ name: t.name, category: 'activities' })),
-    ...currentTags.triggers.map(t => ({ name: t.name, category: 'triggers' })),
-  ];
-  try {
-    await fetch('/entry-tags', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entry_id: currentEntryId, tags: allTags }),
-    });
-  } catch (_) {}
-}
+// Tags are now auto-applied by the server after /reflect runs autostruct.
+// saveCurrentTags is no longer needed.
+async function saveCurrentTags() { /* deprecated — kept for compat */ }
 
 function clearJournalEntry() {
   document.getElementById('notes').value = '';
   document.getElementById('status').textContent = '';
   currentEntryId = null;
   clearSignals();
-  TAG_CATEGORIES.forEach(cat => { currentTags[cat] = []; renderTagChips(cat); });
-  clearAutoStruct();
+  currentTags = [];
+  renderTags();
+  document.getElementById('tags-loading').style.display = 'none';
 }
 
 
@@ -3047,7 +3131,7 @@ async function doTranscribe(blob) {
   isTranscribing = true;
   showTranscribingUI();
   try {
-    const res = await fetch('/transcribe', { method: 'POST', body: blob });
+    const res = await authFetch('/transcribe', { method: 'POST', body: blob });
     if (!res.ok) {
       let msg = 'Request failed';
       try { const err = await res.json(); msg = err.detail || msg; } catch (_) {}
@@ -3094,7 +3178,7 @@ async function doSpeak() {
   btn.disabled = true;
   btn.textContent = 'Generating…';
   try {
-    const res = await fetch('/speak', {
+    const res = await authFetch('/speak', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
@@ -3135,7 +3219,7 @@ async function loadCharts() {
   containerEl.style.display = 'none';
 
   try {
-    const res = await fetch('/signal-series?days=' + days);
+    const res = await authFetch('/signal-series?days=' + days);
     if (!res.ok) throw new Error();
     const data = await res.json();
     chartDataCache = data;
@@ -3282,7 +3366,7 @@ async function doCorrelations() {
   btn.disabled = true;
 
   try {
-    const res = await fetch('/narrate-correlations', {
+    const res = await authFetch('/narrate-correlations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ days: 180 }),
@@ -3294,7 +3378,7 @@ async function doCorrelations() {
     while (!done) {
       await sleep(1200);
       try {
-        const statusRes = await fetch('/narrate-correlations-status/' + data.task_id);
+        const statusRes = await authFetch('/narrate-correlations-status/' + data.task_id);
         const s = await statusRes.json();
         if (s.status === 'ready') {
           renderCorrelations(s.result);
@@ -3415,7 +3499,7 @@ async function doAnalyzeTrends() {
   btn.disabled = true;
   content.innerHTML = '<p class="trends-loading">Analyzing your entries…</p>';
   try {
-    const res = await fetch('/analyze-trends', {
+    const res = await authFetch('/analyze-trends', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ days: windowDays }),
@@ -3453,7 +3537,7 @@ async function loadTimeline() {
   timelineData = null;
   container.innerHTML = '<p class="timeline-empty">Loading…</p>';
   try {
-    const res = await fetch('/timeline');
+    const res = await authFetch('/timeline');
     if (!res.ok) throw new Error('Failed to load timeline');
     timelineData = await res.json();
     renderTimeline(timelineData);
@@ -3499,7 +3583,7 @@ async function openEntry(entryDate) {
   document.getElementById('modal-body').innerHTML = '';
   modal.classList.add('active');
   try {
-    const res = await fetch('/export');
+    const res = await authFetch('/export');
     if (!res.ok) throw new Error('Failed to load entry');
     const data = await res.json();
     const entry = data.entries.find(e => e.entry_date === entryDate);
@@ -3508,7 +3592,7 @@ async function openEntry(entryDate) {
     // Fetch tags for this entry
     let tags = [];
     try {
-      const tagRes = await fetch('/entry-tags/' + entry.id);
+      const tagRes = await authFetch('/entry-tags/' + entry.id);
       if (tagRes.ok) {
         const tagData = await tagRes.json();
         tags = tagData.tags || [];
@@ -3591,7 +3675,7 @@ async function loadStats() {
   const container = document.getElementById('stats-content');
   container.innerHTML = '<p style="color:var(--text-muted);font-size:0.875rem">Loading…</p>';
   try {
-    const res = await fetch('/stats');
+    const res = await authFetch('/stats');
     if (!res.ok) throw new Error('Failed to load stats');
     const data = await res.json();
     container.innerHTML = '<div class="stats-grid">' +
@@ -4018,7 +4102,7 @@ async function startBreathe() {
 
   // Try Kokoro TTS
   try {
-    const res = await fetch('/speak', {
+    const res = await authFetch('/speak', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text: introText }),
@@ -4261,7 +4345,7 @@ async function doClinicianSummary() {
   draftArea.style.display = 'none';
 
   try {
-    const res = await fetch('/clinician-summary', {
+    const res = await authFetch('/clinician-summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ start_date, end_date }),
@@ -4295,7 +4379,7 @@ async function doClinicianExportMarkdown() {
 
   const generated_date = new Date().toISOString().slice(0, 10);
 
-  const res = await fetch('/clinician-export', {
+  const res = await authFetch('/clinician-export', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -4453,7 +4537,7 @@ async function doSearch() {
   if (!query) { resultsEl.innerHTML = ''; return; }
   resultsEl.innerHTML = '<p style="color:var(--text-muted);font-size:0.875rem;">Searching...</p>';
   try {
-    const res = await fetch('/export');
+    const res = await authFetch('/export');
     if (!res.ok) throw new Error('Failed to load entries');
     const data = await res.json();
     const entries = data.entries || [];
@@ -4493,7 +4577,7 @@ async function doAskJournal() {
   resultEl.style.display = 'none';
 
   try {
-    const res = await fetch('/ask', {
+    const res = await authFetch('/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question }),
@@ -4505,7 +4589,7 @@ async function doAskJournal() {
     while (!done) {
       await sleep(1200);
       try {
-        const statusRes = await fetch('/ask-status/' + data.task_id);
+        const statusRes = await authFetch('/ask-status/' + data.task_id);
         const s = await statusRes.json();
         if (s.status === 'ready') {
           renderAskResult(s.result);
@@ -4565,7 +4649,7 @@ async function renderCalendarHeatmap() {
   const container = document.getElementById('calendar-heatmap');
   if (!container) return;
   try {
-    const res = await fetch('/export');
+    const res = await authFetch('/export');
     if (!res.ok) throw new Error();
     const entries = await res.json();
     const entryDates = new Set((entries.entries || []).map(e => e.entry_date));
@@ -4647,7 +4731,7 @@ function ndNextWeek() {
 
 async function loadWeeklyCheckin(weekStart) {
   try {
-    const res = await fetch('/weekly-checkins?weeks=52');
+    const res = await authFetch('/weekly-checkins?weeks=52');
     if (!res.ok) throw new Error();
     const checkins = await res.json();
     const found = checkins.find(c => c.week_start === weekStart);
@@ -4705,7 +4789,7 @@ async function saveWeeklyCheckin() {
   btn.disabled = true;
   statusEl.textContent = 'Saving...';
   try {
-    const res = await fetch('/weekly-checkin', {
+    const res = await authFetch('/weekly-checkin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -4730,7 +4814,7 @@ async function saveWeeklyCheckin() {
 async function loadNDHistory() {
   const container = document.getElementById('nd-history');
   try {
-    const res = await fetch('/weekly-checkins?weeks=12');
+    const res = await authFetch('/weekly-checkins?weeks=12');
     if (!res.ok) throw new Error();
     const checkins = await res.json();
     if (checkins.length === 0) {
@@ -4759,7 +4843,7 @@ async function doInteroCheckin() {
   btn.disabled = true;
   resultEl.textContent = 'Thinking...';
   try {
-    const res = await fetch('/reflect', {
+    const res = await authFetch('/reflect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -4770,7 +4854,7 @@ async function doInteroCheckin() {
     if (!res.ok) throw new Error('LLM unavailable');
     const data = await res.json();
     // Fetch the kept_summary for this entry
-    const exportRes = await fetch('/export');
+    const exportRes = await authFetch('/export');
     const exportData = await exportRes.json();
     const entry = exportData.entries?.find(e => e.id === data.entry_id);
     const reflection = entry?.kept_summary || '(AI reflection not yet available)';
@@ -4792,7 +4876,7 @@ async function openEntry(entryDate) {
   document.getElementById('modal-body').innerHTML = '';
   modal.classList.add('active');
   try {
-    const res = await fetch('/export');
+    const res = await authFetch('/export');
     if (!res.ok) throw new Error('Failed to load entry');
     const data = await res.json();
     const entry = data.entries.find(e => e.entry_date === entryDate);
@@ -4800,7 +4884,7 @@ async function openEntry(entryDate) {
 
     let tags = [];
     try {
-      const tagRes = await fetch('/entry-tags/' + entry.id);
+      const tagRes = await authFetch('/entry-tags/' + entry.id);
       if (tagRes.ok) tags = (await tagRes.json()).tags || [];
     } catch (_) {}
 
@@ -4870,12 +4954,89 @@ async function openEntry(entryDate) {
 async function saveWorkingNotes(entryId) {
   const notes = document.getElementById('modal-working-notes').value.trim();
   try {
-    await fetch('/working-notes', {
+    await authFetch('/working-notes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ entry_id: entryId, working_notes: notes }),
     });
   } catch (_) {}
+}
+
+function onChangePassInput() {
+  const val = document.getElementById('cp-new')?.value || '';
+  const el = document.getElementById('cp-strength');
+  if (!el) return;
+  if (val.length < 8) { el.textContent = 'Too short — use at least 8 characters.'; el.style.color = '#f87171'; }
+  else if (val.length < 12) { el.textContent = 'Acceptable, but longer is better.'; el.style.color = '#fbbf24'; }
+  else if (val.length < 16) { el.textContent = 'Good.'; el.style.color = '#5bca8e'; }
+  else { el.textContent = 'Strong.'; el.style.color = '#5bca8e'; }
+}
+
+async function doChangePassphrase() {
+  const oldPw = document.getElementById('cp-old')?.value || '';
+  const newPw = document.getElementById('cp-new')?.value || '';
+  const newPw2 = document.getElementById('cp-new2')?.value || '';
+  const status = document.getElementById('cp-save-status');
+  const btn = document.getElementById('cp-save-btn');
+  if (!oldPw) { status.textContent = 'Enter your current passphrase.'; status.style.color = '#f87171'; return; }
+  if (newPw.length < 8) { status.textContent = 'New passphrase must be at least 8 characters.'; status.style.color = '#f87171'; return; }
+  if (newPw !== newPw2) { status.textContent = 'New passphrases do not match.'; status.style.color = '#f87171'; return; }
+  if (oldPw === newPw) { status.textContent = 'New passphrase must be different from the old one.'; status.style.color = '#f87171'; return; }
+  btn.disabled = true;
+  btn.textContent = 'Changing…';
+  status.textContent = '';
+  try {
+    const res = await authFetch('/vault-change-passphrase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_passphrase: oldPw, new_passphrase: newPw }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      status.style.color = '#5bca8e';
+      status.textContent = data.message || 'Passphrase changed.';
+      document.getElementById('cp-old').value = '';
+      document.getElementById('cp-new').value = '';
+      document.getElementById('cp-new2').value = '';
+      const strength = document.getElementById('cp-strength');
+      if (strength) strength.textContent = '';
+    } else {
+      status.style.color = '#f87171';
+      status.textContent = data.detail || 'Passphrase change failed.';
+    }
+  } catch (e) {
+    status.style.color = '#f87171';
+    status.textContent = 'Could not connect to server.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Change passphrase';
+  }
+}
+
+// Show/hide passphrase section based on vault status
+async function initPassphraseSection() {
+  const status = document.getElementById('vault-passphrase-status');
+  if (!status) return;
+  try {
+    const res = await authFetch('/vault-status');
+    if (!res.ok) return;
+    const vs = await res.json();
+    if (!vs.is_setup || !vs.is_unlocked) {
+      // Vault is not set up or not unlocked — passphrase change not available
+      status.textContent = vs.is_setup ? 'Unlock your journal first to change the passphrase.' : 'Encryption is not set up yet.';
+      status.style.color = 'var(--text-muted)';
+      document.getElementById('cp-old').disabled = true;
+      document.getElementById('cp-new').disabled = true;
+      document.getElementById('cp-new2').disabled = true;
+      const btn = document.getElementById('cp-save-btn');
+      if (btn) btn.disabled = true;
+    } else {
+      status.textContent = 'Your journal is encrypted. Enter your current passphrase to change it.';
+      status.style.color = 'var(--text-muted)';
+    }
+  } catch (_) {
+    status.textContent = 'Could not check vault status.';
+  }
 }
 
 // ============================================================
@@ -4890,7 +5051,7 @@ let vaultUnlocking = false;
 
 async function fetchVaultStatus() {
   try {
-    const res = await fetch('/vault-status');
+    const res = await authFetch('/vault-status');
     if (res.ok) {
       vaultState = await res.json();
     }
@@ -4905,6 +5066,525 @@ function setVaultInputType(type) {
   if (input) input.type = type;
   const eyeBtn = document.getElementById('vault-eye-btn');
   if (eyeBtn) eyeBtn.textContent = type === 'password' ? 'Show' : 'Hide';
+}
+
+// ============================================================
+// AUTH: network-mode login, device approval, authFetch wrapper
+// ============================================================
+
+let _authToken = null;       // session token stored in memory
+let _deviceId = null;        // device ID stored in localStorage
+let _authEnabled = false;    // cached: is auth enabled on the server?
+let _networkMode = false;    // cached: is the server running in network mode?
+
+// Persistent device ID: generate once and store in localStorage.
+function getDeviceId() {
+  let id = localStorage.getItem('mt_device_id');
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : ('dev-' + Math.random().toString(36).substr(2, 16));
+    localStorage.setItem('mt_device_id', id);
+  }
+  return id;
+}
+
+// Load saved session token from localStorage on boot.
+function loadSavedToken() {
+  _authToken = localStorage.getItem('mt_session_token');
+  _deviceId = getDeviceId();
+}
+
+// authFetch: wraps fetch() to include auth headers and handle 401s.
+// All API calls in the app should use authFetch() instead of fetch().
+async function authFetch(url, opts = {}) {
+  opts.headers = opts.headers || {};
+  // Add auth token if we have one.
+  if (_authToken) {
+    opts.headers['Authorization'] = 'Bearer ' + _authToken;
+  }
+  // CSRF header for state-changing requests.
+  if (opts.method && opts.method !== 'GET') {
+    opts.headers['X-Requested-With'] = 'mood-tracker-app';
+  }
+
+  let res = await authFetch(url, opts);
+
+  // Capture renewed token from the server.
+  const renewed = res.headers.get('X-Renewed-Session');
+  if (renewed) {
+    _authToken = renewed;
+    localStorage.setItem('mt_session_token', renewed);
+  }
+
+  // If we get a 401 with auth_required, show the auth overlay.
+  if (res.status === 401) {
+    let body = {};
+    try { body = await res.clone().json(); } catch(e) {}
+    if (body.auth_required) {
+      showAuthOverlay();
+      return res; // Let the caller handle it too.
+    }
+  }
+  return res;
+}
+
+// Fetch auth status from the server to determine what overlay to show.
+async function fetchAuthStatus() {
+  try {
+    const res = await fetch('/auth/status');
+    const data = await res.json();
+    _authEnabled = data.auth_enabled;
+    _networkMode = data.network_mode;
+    return data;
+  } catch (e) {
+    return { auth_enabled: false, network_mode: false };
+  }
+}
+
+// Show the auth overlay based on current state.
+function showAuthOverlay() {
+  const overlay = document.getElementById('auth-overlay');
+  const card = document.getElementById('auth-card');
+  overlay.classList.remove('hidden');
+  renderAuthCard('login');
+}
+
+// Hide the auth overlay.
+function hideAuthOverlay() {
+  document.getElementById('auth-overlay').classList.add('hidden');
+}
+
+// Render the auth card in different states: 'login', 'pending', 'denied'.
+function renderAuthCard(state, message) {
+  const card = document.getElementById('auth-card');
+  const statusClass = message && message.startsWith('Error') ? 'error' : message ? 'success' : '';
+
+  if (state === 'login') {
+    card.innerHTML = `
+      <div class="auth-title">Sign In</div>
+      <div class="auth-subtitle">Enter the access password for this Mood Tracker server.</div>
+      <label class="auth-label" for="auth-pw">Access password</label>
+      <input class="auth-input" type="password" id="auth-pw" placeholder="Access password" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')doAuthLogin()">
+      <label class="auth-label" for="auth-device-name">Device name</label>
+      <input class="auth-input" type="text" id="auth-device-name" placeholder="e.g. My iPhone" autocomplete="off"
+             value="${detectDeviceName()}">
+      <button class="auth-btn" id="auth-login-btn" onclick="doAuthLogin()">Sign In</button>
+      <div class="auth-status ${statusClass}" id="auth-login-status">${message || ''}</div>
+    `;
+    setTimeout(() => {
+      const pw = document.getElementById('auth-pw');
+      if (pw) pw.focus();
+    }, 50);
+  } else if (state === 'pending') {
+    card.innerHTML = `
+      <div class="auth-title">Awaiting Approval</div>
+      <div class="auth-subtitle">Your device is waiting for approval from this computer.</div>
+      <div style="text-align:center;margin:1.5rem 0;"><div class="auth-spinner"></div></div>
+      <div class="auth-subtitle" style="text-align:center;">Open Mood Tracker on this computer and approve the device in Settings → Network Access.</div>
+      <button class="auth-btn secondary" onclick="checkDeviceApproval()">Check again</button>
+      <button class="auth-btn" style="margin-top:0.5rem;" onclick="renderAuthCard('login')">Use a different password</button>
+    `;
+    // Auto-poll every 5 seconds.
+    setTimeout(checkDeviceApproval, 5000);
+  } else if (state === 'denied') {
+    card.innerHTML = `
+      <div class="auth-title">Access Denied</div>
+      <div class="auth-subtitle">This device has been denied or revoked. Contact the operator to regain access.</div>
+      <button class="auth-btn secondary" onclick="renderAuthCard('login')">Try again</button>
+    `;
+  }
+}
+
+// Detect a reasonable device name from the user agent.
+function detectDeviceName() {
+  const ua = navigator.userAgent;
+  if (/iPhone/.test(ua)) return 'iPhone';
+  if (/iPad/.test(ua)) return 'iPad';
+  if (/Android/.test(ua)) return 'Android Phone';
+  if (/Macintosh/.test(ua)) return 'Mac';
+  if (/Windows/.test(ua)) return 'Windows PC';
+  if (/Linux/.test(ua)) return 'Linux PC';
+  return 'Device';
+}
+
+// Handle login form submission.
+async function doAuthLogin() {
+  const pw = document.getElementById('auth-pw');
+  const name = document.getElementById('auth-device-name');
+  const status = document.getElementById('auth-login-status');
+  const btn = document.getElementById('auth-login-btn');
+  if (!pw || !name) return;
+
+  btn.disabled = true;
+  status.textContent = 'Signing in…';
+  status.className = 'auth-status';
+
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'mood-tracker-app' },
+      body: JSON.stringify({
+        password: pw.value,
+        device_name: name.value || detectDeviceName(),
+        device_id: _deviceId,
+      }),
+    });
+    const data = await res.json();
+
+    if (res.status === 429) {
+      status.textContent = data.detail || 'Too many attempts. Wait a moment.';
+      status.className = 'auth-status error';
+      btn.disabled = false;
+      return;
+    }
+
+    if (res.status === 403) {
+      // Device denied/revoked.
+      renderAuthCard('denied');
+      return;
+    }
+
+    if (res.status === 401) {
+      status.textContent = 'Incorrect password.';
+      status.className = 'auth-status error';
+      btn.disabled = false;
+      return;
+    }
+
+    if (data.approved) {
+      // Device is approved — store token and proceed.
+      _authToken = data.token;
+      localStorage.setItem('mt_session_token', data.token);
+      hideAuthOverlay();
+      // Now proceed to vault unlock.
+      await initVaultUI();
+      return;
+    }
+
+    if (data.pending) {
+      // Device is pending — show the waiting screen.
+      renderAuthCard('pending');
+      return;
+    }
+
+    // Unexpected response.
+    status.textContent = data.detail || 'Unexpected error.';
+    status.className = 'auth-status error';
+    btn.disabled = false;
+  } catch (e) {
+    status.textContent = 'Connection error. Is the server running?';
+    status.className = 'auth-status error';
+    btn.disabled = false;
+  }
+}
+
+// Poll for device approval status.
+async function checkDeviceApproval() {
+  if (!_deviceId) return;
+  try {
+    const res = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'mood-tracker-app' },
+      body: JSON.stringify({
+        password: document.getElementById('auth-pw')?.value || '',
+        device_name: detectDeviceName(),
+        device_id: _deviceId,
+      }),
+    });
+    const data = await res.json();
+
+    if (data.approved) {
+      _authToken = data.token;
+      localStorage.setItem('mt_session_token', data.token);
+      hideAuthOverlay();
+      await initVaultUI();
+    } else if (data.pending) {
+      // Still pending — keep waiting, auto-poll again.
+      setTimeout(checkDeviceApproval, 5000);
+    } else if (res.status === 403) {
+      renderAuthCard('denied');
+    }
+    // If 401 (wrong password), stay on login form.
+  } catch (e) {
+    // Network error — try again later.
+    setTimeout(checkDeviceApproval, 10000);
+  }
+}
+
+// Initialize auth UI on page load.
+async function initAuthUI() {
+  const status = await fetchAuthStatus();
+  _authEnabled = status.auth_enabled;
+  _networkMode = status.network_mode;
+
+  // Update settings panel visibility.
+  updateNetworkSettingsUI(status);
+
+  if (!_authEnabled || !_networkMode) {
+    // No auth needed. Proceed to vault.
+    return;
+  }
+
+  // Try the saved token.
+  loadSavedToken();
+  if (_authToken) {
+    const valid = await validateToken();
+    if (valid) {
+      hideAuthOverlay();
+      return; // Token works — proceed to vault.
+    }
+  }
+
+  // Show auth overlay.
+  showAuthOverlay();
+}
+
+// Validate the current token against the server.
+async function validateToken() {
+  if (!_authToken) return false;
+  try {
+    const res = await authFetch('/auth/devices');
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Update the Network Access section in Settings.
+function updateNetworkSettingsUI(status) {
+  const enableSection = document.getElementById('network-enable-section');
+  const devicesSection = document.getElementById('network-devices-section');
+  const passwordSection = document.getElementById('network-password-section');
+  const disableSection = document.getElementById('network-disable-section');
+  const statusEl = document.getElementById('network-access-status');
+
+  if (!status) return;
+
+  if (status.network_mode && status.auth_enabled) {
+    // Network mode ON, auth enabled.
+    statusEl.innerHTML = '<strong>Network mode:</strong> On — devices on your LAN can access Mood Tracker with a password.';
+    enableSection.style.display = 'none';
+    devicesSection.style.display = 'block';
+    passwordSection.style.display = 'block';
+    disableSection.style.display = 'block';
+    loadDeviceList();
+  } else if (status.network_mode && !status.auth_enabled) {
+    // Network mode ON but no password set yet (first run).
+    statusEl.innerHTML = '<strong>Network mode:</strong> On — set an access password to secure access.';
+    enableSection.style.display = 'block';
+    devicesSection.style.display = 'none';
+    passwordSection.style.display = 'none';
+    disableSection.style.display = 'none';
+  } else {
+    // Local mode — offer to enable.
+    statusEl.innerHTML = '<strong>Network mode:</strong> Off — Mood Tracker is only accessible from this computer.';
+    enableSection.style.display = 'block';
+    devicesSection.style.display = 'none';
+    passwordSection.style.display = 'none';
+    disableSection.style.display = 'none';
+  }
+}
+
+// Enable network access (sets password).
+async function doEnableNetwork() {
+  const pw = document.getElementById('access-password').value;
+  const pw2 = document.getElementById('access-password2').value;
+  const status = document.getElementById('network-enable-status');
+
+  if (pw.length < 10) {
+    status.textContent = 'Password must be at least 10 characters.';
+    status.style.color = '#f87171';
+    return;
+  }
+  if (pw !== pw2) {
+    status.textContent = 'Passwords do not match.';
+    status.style.color = '#f87171';
+    return;
+  }
+
+  try {
+    const res = await fetch('/auth/enable', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'mood-tracker-app' },
+      body: JSON.stringify({ password: pw }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      status.textContent = 'Access password set! Restart with: python run.py --network';
+      status.style.color = 'var(--accent)';
+    } else {
+      status.textContent = data.detail || 'Error.';
+      status.style.color = '#f87171';
+    }
+  } catch (e) {
+    status.textContent = 'Connection error.';
+    status.style.color = '#f87171';
+  }
+}
+
+// Disable network access.
+async function doDisableNetwork() {
+  const pw = document.getElementById('disable-pw').value;
+  const status = document.getElementById('network-disable-status');
+
+  if (!pw) {
+    status.textContent = 'Enter your access password.';
+    status.style.color = '#f87171';
+    return;
+  }
+
+  try {
+    const res = await fetch('/auth/disable', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'mood-tracker-app' },
+      body: JSON.stringify({ password: pw }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      status.textContent = 'Network access disabled. Restart with: python run.py';
+      status.style.color = 'var(--accent)';
+      _authToken = null;
+      localStorage.removeItem('mt_session_token');
+      // Refresh UI.
+      const authStatus = await fetchAuthStatus();
+      updateNetworkSettingsUI(authStatus);
+    } else {
+      status.textContent = data.detail || 'Error.';
+      status.style.color = '#f87171';
+    }
+  } catch (e) {
+    status.textContent = 'Connection error.';
+    status.style.color = '#f87171';
+  }
+}
+
+// Load and display the device list.
+async function loadDeviceList() {
+  const listEl = document.getElementById('device-list');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;padding:0.5rem 0;">Loading…</div>';
+
+  try {
+    const res = await authFetch('/auth/devices');
+    const data = await res.json();
+    if (!res.ok) {
+      listEl.innerHTML = '<div style="color:#f87171;font-size:0.8rem;">Failed to load devices.</div>';
+      return;
+    }
+    const devices = data.devices || [];
+    if (devices.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--text-muted);font-size:0.8rem;padding:0.5rem 0;">No devices registered yet.</div>';
+      return;
+    }
+
+    listEl.innerHTML = devices.map(d => {
+      const statusPill = `<span class="auth-status-pill ${d.status}">${d.status}</span>`;
+      const actions = d.status === 'pending'
+        ? `<div class="auth-actions">
+             <button onclick="approveDevice('${d.id}')">Approve</button>
+             <button class="danger" onclick="denyDevice('${d.id}')">Deny</button>
+           </div>`
+        : d.status === 'approved'
+        ? `<div class="auth-actions"><button class="danger" onclick="revokeDevice('${d.id}')">Revoke</button></div>`
+        : '';
+      const lastSeen = d.last_seen ? timeAgo(d.last_seen) : 'never';
+      return `<div class="auth-device-row">
+        <div class="auth-device-info">
+          <div class="auth-device-name">${escHtml(d.name || d.id.slice(0,8))}</div>
+          <div class="auth-device-meta">${escHtml(d.ip || '')} · ${lastSeen}</div>
+        </div>
+        ${statusPill}
+        ${actions}
+      </div>`;
+    }).join('');
+  } catch (e) {
+    listEl.innerHTML = '<div style="color:#f87171;font-size:0.8rem;">Connection error.</div>';
+  }
+}
+
+function timeAgo(isoStr) {
+  const now = Date.now();
+  const then = new Date(isoStr).getTime();
+  const diff = Math.floor((now - then) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+async function approveDevice(id) {
+  await authFetch('/auth/approve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ device_id: id, action: 'approve' }),
+  });
+  loadDeviceList();
+}
+
+async function denyDevice(id) {
+  await authFetch('/auth/approve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ device_id: id, action: 'deny' }),
+  });
+  loadDeviceList();
+}
+
+async function revokeDevice(id) {
+  if (!confirm('Revoke this device? They will need to sign in again.')) return;
+  await authFetch('/auth/revoke', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ device_id: id }),
+  });
+  loadDeviceList();
+}
+
+// Change access password.
+async function doChangeAccessPassword() {
+  const old = document.getElementById('ap-old').value;
+  const newPw = document.getElementById('ap-new').value;
+  const newPw2 = document.getElementById('ap-new2').value;
+  const status = document.getElementById('ap-save-status');
+
+  if (newPw.length < 10) {
+    status.textContent = 'New password must be at least 10 characters.';
+    status.style.color = '#f87171';
+    return;
+  }
+  if (newPw !== newPw2) {
+    status.textContent = 'Passwords do not match.';
+    status.style.color = '#f87171';
+    return;
+  }
+
+  try {
+    const res = await authFetch('/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_password: old, new_password: newPw }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      status.textContent = 'Password changed. All devices have been revoked — sign in again.';
+      status.style.color = 'var(--accent)';
+      // Re-login with the new password.
+      _authToken = null;
+      localStorage.removeItem('mt_session_token');
+    } else {
+      status.textContent = data.detail || 'Error.';
+      status.style.color = '#f87171';
+    }
+  } catch (e) {
+    status.textContent = 'Connection error.';
+    status.style.color = '#f87171';
+  }
 }
 
 async function initVaultUI() {
@@ -4945,7 +5625,10 @@ function renderVaultUnlock(card) {
     </div>
     <div class="vault-error" id="vault-error"></div>
     <button class="vault-btn" id="vault-unlock-btn" onclick="doVaultUnlock()">Unlock</button>
-    ${hasRK ? '<div class="vault-recovery-section"><div class="vault-recovery-toggle"><button class="vault-link" onclick="vaultMode=\'recovery\';renderVaultCard()">Forgot passphrase? Use recovery key.</button></div></div>' : ''}
+    <div class="vault-recovery-section">
+      ${hasRK ? '<div class="vault-recovery-toggle"><button class="vault-link" onclick="vaultMode=\'recovery\';renderVaultCard()">Forgot passphrase? Use recovery key.</button></div>' : ''}
+      <div style="text-align:center;margin-top:0.5rem;"><button class="vault-link" style="color:#f87171;" onclick="showVaultReset()">I don\'t have my passphrase or recovery key</button></div>
+    </div>
   `;
   document.getElementById('vault-passphrase').focus();
 }
@@ -5012,7 +5695,12 @@ function renderVaultRecovery(card) {
     </div>
     <div class="vault-error" id="vault-error"></div>
     <button class="vault-btn" id="vault-recovery-btn" onclick="doVaultRecovery()">Set new passphrase</button>
-    <div style="text-align:center;"><button class="vault-link" onclick="vaultMode='unlock';renderVaultCard()">Back to unlock</button></div>
+    <div style="text-align:center;margin-top:0.75rem;">
+      <button class="vault-link" onclick="vaultMode='unlock';renderVaultCard()">Back to unlock</button>
+    </div>
+    <div style="text-align:center;margin-top:0.5rem;">
+      <button class="vault-link" style="color:#f87171;" onclick="showVaultReset()">Start over (delete all data)</button>
+    </div>
   `;
   document.getElementById('vault-recovery-key').focus();
 }
@@ -5070,7 +5758,7 @@ async function doVaultUnlock() {
   btn.disabled = true;
   btn.textContent = 'Unlocking…';
   try {
-    const res = await fetch('/vault-unlock', {
+    const res = await authFetch('/vault-unlock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ passphrase }),
@@ -5106,7 +5794,7 @@ async function doVaultSetup() {
   btn.disabled = true;
   btn.textContent = 'Setting up…';
   try {
-    const res = await fetch('/vault-setup', {
+    const res = await authFetch('/vault-setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ passphrase, recovery_key: recoveryKey }),
@@ -5174,7 +5862,7 @@ async function doVaultRecovery() {
   btn.disabled = true;
   btn.textContent = 'Recovering…';
   try {
-    const res = await fetch('/vault-recovery-unlock', {
+    const res = await authFetch('/vault-recovery-unlock', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ recovery_key: recoveryKey, new_passphrase: newPassphrase }),
@@ -5208,6 +5896,67 @@ function copyRecoveryKey() {
   if (display) navigator.clipboard.writeText(display.textContent).catch(() => {});
 }
 
+function showVaultReset() {
+  const card = document.getElementById('vault-card');
+  card.innerHTML = `
+    <div class="vault-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+      </svg>
+    </div>
+    <h2 class="vault-title" style="color:#f87171;">Start over?</h2>
+    <p class="vault-subtitle">This will permanently delete all your journal entries, tags, and encrypted data. This cannot be undone.</p>
+    <div class="vault-warning">
+      <strong>All data will be lost.</strong>
+      Your encrypted database and vault will be deleted. You will start fresh with a new empty journal.
+    </div>
+    <div class="vault-error" id="vault-error"></div>
+    <div class="vault-checkbox-row">
+      <input type="checkbox" id="vault-reset-understood" />
+      <label for="vault-reset-understood">I understand this permanently deletes all my journal data.</label>
+    </div>
+    <button class="vault-btn" id="vault-reset-btn" style="background:#f87171;" onclick="doVaultReset()">Delete everything and start over</button>
+    <div style="text-align:center;margin-top:0.5rem;">
+      <button class="vault-link" onclick="vaultMode='unlock';renderVaultCard()">Cancel — go back</button>
+    </div>
+  `;
+}
+
+async function doVaultReset() {
+  const understood = document.getElementById('vault-reset-understood');
+  if (!understood || !understood.checked) {
+    setVaultError('Please confirm that you understand all data will be deleted.');
+    return;
+  }
+  clearVaultError();
+  const btn = document.getElementById('vault-reset-btn');
+  btn.disabled = true;
+  btn.textContent = 'Resetting…';
+  try {
+    const res = await authFetch('/vault-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirm: 'reset' }),
+    });
+    if (res.ok) {
+      // Reset state and show setup screen
+      vaultState = { is_setup: false, is_unlocked: false, has_recovery_key: false, has_api_key: false, db_encrypted: false };
+      vaultMode = 'setup';
+      renderVaultCard();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setVaultError(data.detail || 'Reset failed.');
+    }
+  } catch (e) {
+    setVaultError('Could not connect to server. Is the app running?');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Delete everything and start over';
+    }
+  }
+}
+
 // ============================================================
 // SETTINGS TAB
 // ============================================================
@@ -5238,7 +5987,7 @@ async function initSettingsTab() {
   document.getElementById('settings-save-btn').textContent = 'Save settings';
 
   try {
-    const res = await fetch('/settings');
+    const res = await authFetch('/settings');
     if (!res.ok) return;
     const cfg = await res.json();
 
@@ -5289,7 +6038,7 @@ async function loadLocalModels(selected) {
   const select = document.getElementById('settings-local-model');
   select.innerHTML = '<option value="">Loading...</option>';
   try {
-    const res = await fetch('/local-models');
+    const res = await authFetch('/local-models');
     if (!res.ok) throw new Error();
     const data = await res.json();
     const models = data.models || [];
@@ -5312,7 +6061,7 @@ async function loadCloudModels(selected) {
   const select = document.getElementById('settings-cloud-model');
   select.innerHTML = '<option value="">Fetching models...</option>';
   try {
-    const res = await fetch('/models');
+    const res = await authFetch('/models');
     if (!res.ok) throw new Error();
     const data = await res.json();
     const models = data.models || [];
@@ -5385,7 +6134,7 @@ async function saveSettings() {
   testResult.style.display = 'none';
 
   try {
-    const res = await fetch('/settings', {
+    const res = await authFetch('/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -5429,7 +6178,7 @@ async function testSettingsConnection() {
   btn.textContent = 'Testing...';
   result.style.display = 'none';
   try {
-    const res = await fetch('/test-connection', { method: 'POST' });
+    const res = await authFetch('/test-connection', { method: 'POST' });
     const data = await res.json();
     if (data.ok) {
       result.className = 'settings-test-result ok';
@@ -5452,7 +6201,14 @@ async function testSettingsConnection() {
 // ============================================================
 // INIT
 // ============================================================
-initVaultUI();
+(async function boot() {
+  // 1. Check auth state and show auth overlay if needed.
+  await initAuthUI();
+  // 2. If auth overlay was hidden (valid token or no auth needed), proceed to vault.
+  if (document.getElementById('auth-overlay').classList.contains('hidden')) {
+    initVaultUI();
+  }
+})();
 
 // ============================================================
 // BACKUP & RESTORE (Phase S1)
@@ -5461,7 +6217,7 @@ async function doBackupDownload() {
   const statusEl = document.getElementById('backup-download-status');
   statusEl.textContent = 'Preparing backup\u2026';
   try {
-    const res = await fetch('/export');
+    const res = await authFetch('/export');
     if (!res.ok) throw new Error('Export failed');
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -5537,7 +6293,7 @@ async function doRestoreSubmit(policy) {
     // Validate it's JSON first
     JSON.parse(fileText);
 
-    var res = await fetch('/import?on_conflict=' + policy, {
+    var res = await authFetch('/import?on_conflict=' + policy, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: fileText,
@@ -5582,7 +6338,7 @@ async function updateProviderBadge() {
   const dot = document.getElementById('provider-dot');
   const label = document.getElementById('provider-label');
   try {
-    const res = await fetch('/provider-info');
+    const res = await authFetch('/provider-info');
     if (!res.ok) return;
     const info = await res.json();
     const transport = info.transport || 'ollama';

@@ -766,18 +766,19 @@ def suggest_autostruct(entry_text: str, existing_tags: list[dict]) -> dict:
     Uses a fast/cheap model. Falls back to empty signals/tags on parse error.
     existing_tags: flat list of {id, name, category} from the DB — used to
     bias suggestions toward tags that already exist.
+
+    Tags are open-ended: the model can return any category, not just the
+    fixed four. New categories are created automatically when applied.
     """
     # Build a hint block listing existing tags grouped by category
     if existing_tags:
         by_cat: dict[str, list[str]] = {}
         for t in existing_tags:
             cat = t.get("category", "")
-            by_cat.setdefault(cat, []).append(t.get("name", ""))
-        hint_lines = []
-        for cat in ("people", "places", "activities", "triggers"):
-            if cat in by_cat:
-                hint_lines.append(f"  {cat}: {', '.join(by_cat[cat])}")
-        existing_hint = "\nExisting tags you may reuse:\n" + "\n".join(hint_lines)
+            if cat:
+                by_cat.setdefault(cat, []).append(t.get("name", ""))
+        hint_lines = [f"  {cat}: {', '.join(sorted(set(names)))}" for cat, names in by_cat.items()]
+        existing_hint = "\nExisting tags you may reuse (any category, not just these):\n" + "\n".join(hint_lines)
     else:
         existing_hint = ""
 
@@ -791,32 +792,11 @@ def suggest_autostruct(entry_text: str, existing_tags: list[dict]) -> dict:
         AUTOSTRUCT_SYSTEM_PROMPT,
         user_prompt,
         job="autostruct",
-        max_tokens=384,
+        max_tokens=512,
         temperature=0.3,
     )
 
-    import json as _json
-    try:
-        result = _json.loads(raw)
-        # Validate structure
-        if not isinstance(result, dict):
-            return _empty_autostruct()
-        signals = result.get("signals", {})
-        tags = result.get("tags", {})
-        return {
-            "signals": {
-                "energy": signals.get("energy") if signals.get("energy") in ("low", "med", "high") else None,
-                "sleep_quality": signals.get("sleep_quality") if signals.get("sleep_quality") in ("low", "med", "high") else None,
-                "sensory_load": signals.get("sensory_load") if signals.get("sensory_load") in ("low", "med", "high") else None,
-                "overwhelm": signals.get("overwhelm") if signals.get("overwhelm") in ("low", "med", "high") else None,
-            },
-            "tags": {
-                cat: [str(t) for t in (tags.get(cat) or []) if t]
-                for cat in ("people", "places", "activities", "triggers")
-            },
-        }
-    except Exception:
-        return _empty_autostruct()
+    return _parse_autostruct(raw)
 
 
 def suggest_autostruct_from_snapshot(snapshot: dict, entry_text: str, existing_tags: list[dict]) -> dict:
@@ -825,12 +805,10 @@ def suggest_autostruct_from_snapshot(snapshot: dict, entry_text: str, existing_t
         by_cat: dict[str, list[str]] = {}
         for t in existing_tags:
             cat = t.get("category", "")
-            by_cat.setdefault(cat, []).append(t.get("name", ""))
-        hint_lines = []
-        for cat in ("people", "places", "activities", "triggers"):
-            if cat in by_cat:
-                hint_lines.append(f"  {cat}: {', '.join(by_cat[cat])}")
-        existing_hint = "\nExisting tags you may reuse:\n" + "\n".join(hint_lines)
+            if cat:
+                by_cat.setdefault(cat, []).append(t.get("name", ""))
+        hint_lines = [f"  {cat}: {', '.join(sorted(set(names)))}" for cat, names in by_cat.items()]
+        existing_hint = "\nExisting tags you may reuse (any category, not just these):\n" + "\n".join(hint_lines)
     else:
         existing_hint = ""
 
@@ -845,37 +823,69 @@ def suggest_autostruct_from_snapshot(snapshot: dict, entry_text: str, existing_t
         AUTOSTRUCT_SYSTEM_PROMPT,
         user_prompt,
         job="autostruct",
-        max_tokens=384,
+        max_tokens=512,
         temperature=0.3,
     )
 
+    return _parse_autostruct(raw)
+
+
+def _parse_autostruct(raw: str) -> dict:
+    """Parse the autostruct LLM response into the standard dict shape.
+
+    Tolerates: extra categories the model invents, missing categories,
+    and garbage. Always returns the 4 known signals (validated) plus
+    whatever tags the model proposed, in whatever categories it chose.
+    """
     import json as _json
     try:
         result = _json.loads(raw)
-        if not isinstance(result, dict):
-            return _empty_autostruct()
-        signals = result.get("signals", {})
-        tags = result.get("tags", {})
-        return {
-            "signals": {
-                "energy": signals.get("energy") if signals.get("energy") in ("low", "med", "high") else None,
-                "sleep_quality": signals.get("sleep_quality") if signals.get("sleep_quality") in ("low", "med", "high") else None,
-                "sensory_load": signals.get("sensory_load") if signals.get("sensory_load") in ("low", "med", "high") else None,
-                "overwhelm": signals.get("overwhelm") if signals.get("overwhelm") in ("low", "med", "high") else None,
-            },
-            "tags": {
-                cat: [str(t) for t in (tags.get(cat) or []) if t]
-                for cat in ("people", "places", "activities", "triggers")
-            },
-        }
     except Exception:
         return _empty_autostruct()
+
+    if not isinstance(result, dict):
+        return _empty_autostruct()
+
+    signals = result.get("signals", {}) or {}
+    raw_tags = result.get("tags", {}) or {}
+
+    # Validate signals strictly to the 4 known fields
+    cleaned_signals = {
+        "energy": signals.get("energy") if signals.get("energy") in ("low", "med", "high") else None,
+        "sleep_quality": signals.get("sleep_quality") if signals.get("sleep_quality") in ("low", "med", "high") else None,
+        "sensory_load": signals.get("sensory_load") if signals.get("sensory_load") in ("low", "med", "high") else None,
+        "overwhelm": signals.get("overwhelm") if signals.get("overwhelm") in ("low", "med", "high") else None,
+    }
+
+    # Tags: any category the model returned. Normalize: lowercase, dedupe,
+    # trim, strip empties. Reject categories that aren't short words.
+    cleaned_tags: dict[str, list[str]] = {}
+    for cat, names in raw_tags.items():
+        if not isinstance(cat, str) or not isinstance(names, list):
+            continue
+        cat = cat.strip().lower()
+        if not cat or len(cat) > 32 or " " in cat:
+            continue
+        seen = set()
+        out = []
+        for n in names:
+            if not isinstance(n, str):
+                continue
+            n = n.strip().lower()
+            if not n or len(n) > 32 or n in seen:
+                continue
+            seen.add(n)
+            out.append(n)
+        if out:
+            cleaned_tags[cat] = out
+
+    return {"signals": cleaned_signals, "tags": cleaned_tags}
 
 
 def _empty_autostruct() -> dict:
     return {
         "signals": {"energy": None, "sleep_quality": None, "sensory_load": None, "overwhelm": None},
-        "tags": {"people": [], "places": [], "activities": [], "triggers": []},
+        "tags": {},
     }
 
 
@@ -1042,15 +1052,17 @@ AUTOSTRUCT_SYSTEM_PROMPT = (
     "  - sleep_quality: how restorative sleep was. low = poor/restless. med = adequate. high = restorative.\n"
     "  - sensory_load: sensory input burden today. low = calm environment. med = noticeable input. high = overwhelming input.\n"
     "  - overwhelm: emotional/neurocess overwhelm. low = calm, manageable. med = some strain. high = near-capacity or past it.\n\n"
-    "Tags: categorise people, places, activities, triggers mentioned in the entry. "
-    "Match to existing tags where possible. Use category one of: people, places, activities, triggers. "
-    "Tags should be lowercase, concise (1-2 words max). If no tag fits a category, return an empty array for that category.\n\n"
+    "Tags: categorise anything relevant from the entry. You are NOT limited to a fixed set of categories — "
+    "use whatever categories make sense. Common ones include: people, places, activities, triggers, moods, "
+    "health, work, relationships, self-care, finances. But invent new categories when the entry calls for it.\n"
+    "Each tag should be lowercase, concise (1-2 words max). Reuse existing tags when they fit. "
+    "If no tag fits a category, omit that category entirely (don't include it with an empty array).\n\n"
     "IMPORTANT:\n"
     "  - If you cannot infer a signal value from the entry, use null for that field — do not guess.\n"
     "  - Tags should be based on what is actually written, not assumed.\n"
     "  - Output ONLY JSON in this exact shape, with no markdown fences:\n\n"
     '  {"signals": {"energy": "low|med|high|null", "sleep_quality": "...", "sensory_load": "...", "overwhelm": "..."}, '
-    '"tags": {"people": [], "places": [], "activities": [], "triggers": []}}'
+    '"tags": {"moods": ["stressed"], "work": ["deadlines", "meeting"], "people": ["sarah"], "triggers": ["noise"]}}'
 )
 
 

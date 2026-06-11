@@ -8,6 +8,7 @@ import numpy as np
 
 import httpx
 from fastapi import FastAPI, HTTPException, BackgroundTasks
+from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -83,6 +84,27 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# ---------------------------------------------------------------------------
+# CORS: local-only. The app binds to 127.0.0.1 in run.py and is intended to
+# run as a desktop service on the user's own machine. We allow only same-
+# origin (the embedded SPA) and explicit loopback origins. If you need to
+# expose this to a network, put it behind a reverse proxy that adds auth
+# — don't widen this allowlist.
+# ---------------------------------------------------------------------------
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost",
+        "http://127.0.0.1",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    max_age=3600,
+)
+
 # Mount static files (index.html lives in app/static/)
 BASE_DIR = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -101,6 +123,26 @@ async def vault_lock_middleware(request, call_next):
         from fastapi.responses import JSONResponse
         return JSONResponse(status_code=401, content={"detail": "Vault is locked. Please unlock it first."})
     return await call_next(request)
+
+
+# ---------------------------------------------------------------------------
+# Security headers middleware
+# ---------------------------------------------------------------------------
+@app.middleware("http")
+async def security_headers_middleware(request, call_next):
+    response = await call_next(request)
+    # Mitigate XSS and clickjacking on the embedded SPA. The app is
+    # local-only; the SPA never embeds third-party content.
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; "
+        "object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+    )
+    return response
 
 # ---------------------------------------------------------------------------
 # DB init on startup
@@ -720,21 +762,22 @@ async def vault_setup(req: VaultSetupRequest) -> dict:
     shutil.copy2(str(DB_PATH), str(plaintext_backup))
 
     # Step 2: create vault.json (generates salt)
-    # Store hash of recovery key (verifiable without passphrase)
-    recovery_key_hash = crypto.hash_recovery_key(req.recovery_key)
     _v.setup_vault(
         passphrase=req.passphrase,
         encrypted_api_key="",  # will update after we have the salt
-        encrypted_recovery_key=recovery_key_hash,
+        encrypted_recovery_key="",  # will update after we have the salt
     )
 
-    # Step 3: now encrypt API key with the vault's salt
+    # Step 3: now read back the salt and use it for recovery key hash + API key
     vault_data = _v.load_vault_data()
     vault_salt = _v.b64decode(vault_data["salt"])
+    # Store hash of recovery key salted with the vault's salt (verifiable without passphrase)
+    recovery_key_hash = crypto.hash_recovery_key(req.recovery_key, salt=vault_salt)
+    vault_data["encrypted_recovery_key"] = recovery_key_hash
     if api_key_plaintext:
         encrypted_api_key = crypto.encrypt_value(req.passphrase, api_key_plaintext, vault_salt)
         vault_data["encrypted_api_key"] = encrypted_api_key
-        _v.save_vault_data(vault_data)
+    _v.save_vault_data(vault_data)
 
     # Step 4: derive DB key
     db_key = crypto.derive_db_key(req.passphrase, vault_salt)
@@ -837,12 +880,20 @@ async def vault_recovery_unlock(request: Request) -> dict:
     if not stored_recovery_value:
         raise HTTPException(status_code=400, detail="No recovery key stored.")
 
-    # Verify: new vaults store a hash (hex, 64 chars); old vaults store plaintext.
-    # Try hash verification first; fall back to direct comparison for legacy vaults.
-    if len(stored_recovery_value) == 64 and all(c in "0123456789abcdefABCDEF" for c in stored_recovery_value):
+    # Verify: vaults may store a scrypt-hashed value (b64(salt):hex), an
+    # unsalted SHA-256 hex hash (64 hex chars, legacy), or plaintext (oldest).
+    # Try the strongest format first and fall back as needed.
+    vault_salt = _v.b64decode(vault_data["salt"])
+    if ":" in stored_recovery_value:
+        # New format: b64(salt):scrypt_hex
+        if not crypto.verify_recovery_key(typed_recovery_key, stored_recovery_value):
+            raise HTTPException(status_code=401, detail="Incorrect recovery key.")
+    elif len(stored_recovery_value) == 64 and all(c in "0123456789abcdefABCDEF" for c in stored_recovery_value):
+        # Legacy format: unsalted SHA-256 hex hash
         if not crypto.verify_recovery_key(typed_recovery_key, stored_recovery_value):
             raise HTTPException(status_code=401, detail="Incorrect recovery key.")
     else:
+        # Oldest format: plaintext recovery key (constant-time comparison)
         import secrets as _secrets
         if not _secrets.compare_digest(stored_recovery_value, typed_recovery_key):
             raise HTTPException(status_code=401, detail="Incorrect recovery key.")
@@ -862,10 +913,11 @@ async def vault_recovery_unlock(request: Request) -> dict:
         except Exception:
             pass  # keep old value
 
-    # Update vault: keep salt, update encrypted_recovery_key and encrypted_api_key
+    # Update vault: keep salt, re-hash recovery key with vault salt (scrypt),
+    # and update encrypted_api_key. Never store plaintext recovery key.
     new_vault_data = dict(vault_data)
     new_vault_data["encrypted_api_key"] = new_enc_api_key
-    new_vault_data["encrypted_recovery_key"] = typed_recovery_key  # plain text
+    new_vault_data["encrypted_recovery_key"] = crypto.hash_recovery_key(typed_recovery_key, salt=vault_salt)
     _v.save_vault_data(new_vault_data)
 
     # Unlock with new passphrase

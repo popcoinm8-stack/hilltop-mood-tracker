@@ -6,8 +6,8 @@ Architecture:
   - DB key:     scrypt(passphrase, salt, N=2^14, r=8, p=1, dklen=32) → raw key for SQLCipher PRAGMA
   - Config key: scrypt(passphrase, salt, N=2^14, r=8, p=1, dklen=32) → 32-byte split into 16-byte AES key + 16-byte HMAC key
   - API key:   AES-GCM with a random nonce.  ciphertext = AES-GCM(key, plaintext)
-  - Recovery:   a random 24-char base62 token encrypted with a KEK derived from the recovery key phrase
-  - Recovery key phrase: scrypt("MoodTrackerRecoveryKey" + user_chosen_recovery_passphrase, salt, ...)
+  - Recovery:   scrypt(recovery_key, vault_salt, N=2^14, r=8, p=1, dklen=32) → stored as b64(salt):hex(hash)
+                Verification uses constant-time comparison. Supports legacy bare SHA-256 hashes.
 """
 import hashlib
 import json
@@ -141,19 +141,48 @@ def generate_recovery_key() -> str:
     return secrets.token_urlsafe(18)[:24]
 
 
-def hash_recovery_key(recovery_key: str) -> str:
-    """Hash a recovery key for storage. Uses SHA-256 with a fixed pepper.
-    
-    This allows verification without needing the passphrase.
-    The hash is stored in vault.json and compared against the user's input.
+def hash_recovery_key(recovery_key: str, salt: bytes | None = None) -> str:
+    """Hash a recovery key for storage using scrypt with a per-vault salt.
+
+    Output is `salt_b64:salt_hex` so verification is possible without the
+    passphrase (recovery is intentionally a separate channel from the
+    passphrase). Salt defaults to a fixed application secret; callers should
+    pass a per-vault random salt when one is available (see `salt` param).
+
+    Stored format: `<b64(salt)>:<hex(scrypt(recovery_key, salt, ...))>`
     """
-    import hashlib as _hl
-    return _hl.sha256(recovery_key.encode("utf-8")).hexdigest()
+    if salt is None:
+        # Fall back to a fixed application pepper if no per-vault salt is given.
+        # This is a weaker configuration — when a vault salt is available, always
+        # pass it. The fallback only exists for backwards compatibility with
+        # very old vault.json files written before per-vault salts were used.
+        salt = b"mood-tracker-recovery-pepper-v1"
+    derived = _scrypt_derive(recovery_key, salt, dklen=32)
+    return b64encode(salt).decode() + ":" + derived.hex()
 
 
 def verify_recovery_key(recovery_key: str, stored_hash: str) -> bool:
-    """Verify a typed recovery key against the stored hash."""
-    return secrets.compare_digest(hash_recovery_key(recovery_key), stored_hash)
+    """Verify a typed recovery key against the stored hash.
+
+    Accepts both new (salt:hash) and legacy (bare hash) formats for
+    backwards compatibility with vaults written by older versions.
+    """
+    if ":" in stored_hash:
+        salt_b64, hash_hex = stored_hash.split(":", 1)
+        try:
+            salt = b64decode(salt_b64)
+        except Exception:
+            return False
+        try:
+            expected = bytes.fromhex(hash_hex)
+        except ValueError:
+            return False
+        derived = _scrypt_derive(recovery_key, salt, dklen=32)
+        return secrets.compare_digest(derived, expected)
+
+    # Legacy: bare unsalted SHA-256 hash. Compare in constant time.
+    legacy = hashlib.sha256(recovery_key.encode("utf-8")).hexdigest()
+    return secrets.compare_digest(legacy, stored_hash)
 
 
 # ---------------------------------------------------------------------------
